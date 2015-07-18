@@ -1,0 +1,220 @@
+fileFormatVersion: 2
+guid: 4c556400d3d53fe48b3580c836aaf919
+timeCreated: 1436839158
+licenseType: Free
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Bullet1
+    100002: Bullet2
+    100004: BulletCasing1
+    100006: BulletCasing2
+    100008: Camera
+    100010: //RootNode
+    100012: Lamp
+    100014: Magazine
+    100016: MovingParts
+    100018: Pump
+    100020: Rifle
+    100022: Trigger
+    400000: Bullet1
+    400002: Bullet2
+    400004: BulletCasing1
+    400006: BulletCasing2
+    400008: Camera
+    400010: //RootNode
+    400012: Lamp
+    400014: Magazine
+    400016: MovingParts
+    400018: Pump
+    400020: Rifle
+    400022: Trigger
+    2300000: Bullet1
+    2300002: Bullet2
+    2300004: BulletCasing1
+    2300006: BulletCasing2
+    2300008: Magazine
+    2300010: MovingParts
+    2300012: Pump
+    2300014: Rifle
+    2300016: Trigger
+    3300000: Bullet1
+    3300002: Bullet2
+    3300004: BulletCasing1
+    3300006: BulletCasing2
+    3300008: Magazine
+    3300010: MovingParts
+    3300012: Pump
+    3300014: Rifle
+    3300016: Trigger
+    4300000: Trigger
+    4300002: Bullet1
+    4300004: BulletCasing1
+    4300006: BulletCasing2
+    4300008: Rifle
+    4300010: Bullet2
+    4300012: Pump
+    4300014: MovingParts
+    4300016: Magazine
+    7400000: Trigger|Bullet1|Take 001|BaseLayer
+    7400002: Trigger|Bullet2|Take 001|BaseLayer
+    7400004: Trigger|BulletCasing1|Take 001|BaseLayer
+    7400006: Trigger|BulletCasing2|Take 001|BaseLayer
+    7400008: Trigger|MagazineAction
+    7400010: Trigger|Pump|Take 001|BaseLayer
+    7400012: Trigger|RifleAction
+    7400014: Trigger|shoot
+    7400016: Trigger|Trigger|Take 001|BaseLayer
+    7400018: Bullet1|Bullet1|Take 001|BaseLayer
+    7400020: Bullet1|Bullet2|Take 001|BaseLayer
+    7400022: Bullet1|BulletCasing1|Take 001|BaseLayer
+    7400024: Bullet1|BulletCasing2|Take 001|BaseLayer
+    7400026: Bullet1|MagazineAction
+    7400028: Bullet1|Pump|Take 001|BaseLayer
+    7400030: Bullet1|RifleAction
+    7400032: Bullet1|shoot
+    7400034: Bullet1|Trigger|Take 001|BaseLayer
+    7400036: BulletCasing1|Bullet1|Take 001|BaseLayer
+    7400038: BulletCasing1|Bullet2|Take 001|BaseLayer
+    7400040: BulletCasing1|BulletCasing1|Take 001|BaseLayer
+    7400042: BulletCasing1|BulletCasing2|Take 001|BaseLayer
+    7400044: BulletCasing1|MagazineAction
+    7400046: BulletCasing1|Pump|Take 001|BaseLayer
+    7400048: BulletCasing1|RifleAction
+    7400050: BulletCasing1|shoot
+    7400052: BulletCasing1|Trigger|Take 001|BaseLayer
+    7400054: BulletCasing2|Bullet1|Take 001|BaseLayer
+    7400056: BulletCasing2|Bullet2|Take 001|BaseLayer
+    7400058: BulletCasing2|BulletCasing1|Take 001|BaseLayer
+    7400060: BulletCasing2|BulletCasing2|Take 001|BaseLayer
+    7400062: BulletCasing2|MagazineAction
+    7400064: BulletCasing2|Pump|Take 001|BaseLayer
+    7400066: BulletCasing2|RifleAction
+    7400068: BulletCasing2|shoot
+    7400070: BulletCasing2|Trigger|Take 001|BaseLayer
+    7400072: Rifle|Bullet1|Take 001|BaseLayer
+    7400074: Rifle|Bullet2|Take 001|BaseLayer
+    7400076: Rifle|BulletCasing1|Take 001|BaseLayer
+    7400078: Rifle|BulletCasing2|Take 001|BaseLayer
+    7400080: Rifle|MagazineAction
+    7400082: Rifle|Pump|Take 001|BaseLayer
+    7400084: Rifle|RifleAction
+    7400086: Rifle|shoot
+    7400088: Rifle|Trigger|Take 001|BaseLayer
+    7400090: Bullet2|Bullet1|Take 001|BaseLayer
+    7400092: Bullet2|Bullet2|Take 001|BaseLayer
+    7400094: Bullet2|BulletCasing1|Take 001|BaseLayer
+    7400096: Bullet2|BulletCasing2|Take 001|BaseLayer
+    7400098: Bullet2|MagazineAction
+    7400100: Bullet2|Pump|Take 001|BaseLayer
+    7400102: Bullet2|RifleAction
+    7400104: Bullet2|shoot
+    7400106: Bullet2|Trigger|Take 001|BaseLayer
+    7400108: Pump|Bullet1|Take 001|BaseLayer
+    7400110: Pump|Bullet2|Take 001|BaseLayer
+    7400112: Pump|BulletCasing1|Take 001|BaseLayer
+    7400114: Pump|BulletCasing2|Take 001|BaseLayer
+    7400116: Pump|MagazineAction
+    7400118: Pump|Pump|Take 001|BaseLayer
+    7400120: Pump|RifleAction
+    7400122: Pump|shoot
+    7400124: Pump|Trigger|Take 001|BaseLayer
+    7400126: MovingParts|Bullet1|Take 001|BaseLayer
+    7400128: MovingParts|Bullet2|Take 001|BaseLayer
+    7400130: MovingParts|BulletCasing1|Take 001|BaseLayer
+    7400132: MovingParts|BulletCasing2|Take 001|BaseLayer
+    7400134: MovingParts|MagazineAction
+    7400136: MovingParts|Pump|Take 001|BaseLayer
+    7400138: MovingParts|RifleAction
+    7400140: MovingParts|shoot
+    7400142: MovingParts|Trigger|Take 001|BaseLayer
+    7400144: Magazine|Bullet1|Take 001|BaseLayer
+    7400146: Magazine|Bullet2|Take 001|BaseLayer
+    7400148: Magazine|BulletCasing1|Take 001|BaseLayer
+    7400150: Magazine|BulletCasing2|Take 001|BaseLayer
+    7400152: Magazine|MagazineAction
+    7400154: Magazine|Pump|Take 001|BaseLayer
+    7400156: Magazine|RifleAction
+    7400158: Magazine|shoot
+    7400160: Magazine|Trigger|Take 001|BaseLayer
+    7400162: Lamp|Bullet1|Take 001|BaseLayer
+    7400164: Lamp|Bullet2|Take 001|BaseLayer
+    7400166: Lamp|BulletCasing1|Take 001|BaseLayer
+    7400168: Lamp|BulletCasing2|Take 001|BaseLayer
+    7400170: Lamp|MagazineAction
+    7400172: Lamp|Pump|Take 001|BaseLayer
+    7400174: Lamp|RifleAction
+    7400176: Lamp|shoot
+    7400178: Lamp|Trigger|Take 001|BaseLayer
+    7400180: Camera|Bullet1|Take 001|BaseLayer
+    7400182: Camera|Bullet2|Take 001|BaseLayer
+    7400184: Camera|BulletCasing1|Take 001|BaseLayer
+    7400186: Camera|BulletCasing2|Take 001|BaseLayer
+    7400188: Camera|MagazineAction
+    7400190: Camera|Pump|Take 001|BaseLayer
+    7400192: Camera|RifleAction
+    7400194: Camera|shoot
+    7400196: Camera|Trigger|Take 001|BaseLayer
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

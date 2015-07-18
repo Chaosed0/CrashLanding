@@ -1,0 +1,317 @@
+fileFormatVersion: 2
+guid: fe2db10483cc15149a7b97c31a19d875
+timeCreated: 1432584655
+licenseType: Free
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Camera
+    100002: Lamp
+    100004: Mushroom
+    100006: Point
+    100008: Point.001
+    100010: Point.002
+    100012: //RootNode
+    100014: Armature
+    100016: Cap
+    100018: Cap_end
+    100020: Stalk
+    100022: LArm
+    100024: LArm_end
+    100026: RArm
+    100028: RArm_end
+    400000: Camera
+    400002: Lamp
+    400004: Mushroom
+    400006: Point
+    400008: Point.001
+    400010: Point.002
+    400012: //RootNode
+    400014: Armature
+    400016: Cap
+    400018: Cap_end
+    400020: Stalk
+    400022: LArm
+    400024: LArm_end
+    400026: RArm
+    400028: RArm_end
+    2300000: Mushroom
+    2300002: //RootNode
+    3300000: Mushroom
+    3300002: //RootNode
+    4300000: Mushroom
+    7400000: Point.002|idle
+    7400002: Point.002|move
+    7400004: Point.001|idle
+    7400006: Point.001|move
+    7400008: Point|idle
+    7400010: Point|move
+    7400012: Mushroom|idle
+    7400014: Mushroom|move
+    7400016: Lamp|idle
+    7400018: Lamp|move
+    7400020: Camera|idle
+    7400022: Camera|move
+    7400024: Mushroom|move0
+    7400026: Mushroom|jump
+    7400028: Armature|dodgeR
+    7400030: Armature|idle
+    7400032: Armature|idle.001
+    7400034: Armature|move
+    7400036: Mushroom|idle.001
+    7400038: Armature|Action
+    7400040: Mushroom|Action
+    7400042: Mushroom|dodge
+    7400044: Armature|jump
+    7400046: Armature|dodgeL
+    7400048: Armature|dodgeR
+    9500000: //RootNode
+    13700000: Mushroom
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: Armature|dodgeR
+      takeName: Armature|dodgeR
+      firstFrame: 0
+      lastFrame: 1
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Stalk
+        weight: 1
+      - path: Armature/Stalk/Cap
+        weight: 1
+      - path: Armature/Stalk/Cap/Cap_end
+        weight: 1
+      - path: Mushroom
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: Armature|idle
+      takeName: Armature|idle
+      firstFrame: 0
+      lastFrame: 30
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Stalk
+        weight: 1
+      - path: Armature/Stalk/Cap
+        weight: 1
+      - path: Armature/Stalk/Cap/Cap_end
+        weight: 1
+      - path: Mushroom
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: Armature|jump
+      takeName: Armature|jump
+      firstFrame: 0
+      lastFrame: 15
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Stalk
+        weight: 1
+      - path: Armature/Stalk/Cap
+        weight: 1
+      - path: Armature/Stalk/Cap/Cap_end
+        weight: 1
+      - path: Mushroom
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: Armature|move
+      takeName: Armature|move
+      firstFrame: 0
+      lastFrame: 40
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Stalk
+        weight: 1
+      - path: Armature/Stalk/Cap
+        weight: 1
+      - path: Armature/Stalk/Cap/Cap_end
+        weight: 1
+      - path: Mushroom
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: Armature|dodgeL
+      takeName: Armature|dodgeL
+      firstFrame: 0
+      lastFrame: 1
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Armature
+        weight: 1
+      - path: Armature/Stalk
+        weight: 1
+      - path: Armature/Stalk/Cap
+        weight: 1
+      - path: Armature/Stalk/Cap/Cap_end
+        weight: 1
+      - path: Mushroom
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: Stalk
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
