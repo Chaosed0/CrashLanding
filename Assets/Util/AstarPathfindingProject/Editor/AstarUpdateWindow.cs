@@ -35,7 +35,7 @@ namespace Pathfinding
 			//window.position = new Rect ( 
 			//window.ShowUtility ();
 
-			window.title = "New Version of the A* Pathfinding Project";
+			window.titleContent = new GUIContent("New Version of the A* Pathfinding Project");
 			return window;
 		}
 
