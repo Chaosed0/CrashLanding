@@ -7,7 +7,7 @@ public class RigidbodyMotor : MonoBehaviour {
     private Character character;
     
     public Animator anim;
-    public bool handleDeath = false;
+    public bool canDoubleJump = true;
 
     public float moveSpeed = 10.0f;
     public float turnSpeed = 100.0f;
@@ -19,10 +19,14 @@ public class RigidbodyMotor : MonoBehaviour {
     private bool isDodging;
     private float hSpeed = 0.0f;
     private Vector3 dodgeDir = new Vector3(0,0,0);
+    private bool haveDoubleJump = true;
 
 	private void Start() {
         body = GetComponent<Rigidbody>();
         character = GetComponent<Character>();
+        if (!canDoubleJump) {
+            haveDoubleJump = false;
+        }
 	}
 
 	public void Move(Vector3 movement, float yaw) {
@@ -63,6 +67,10 @@ public class RigidbodyMotor : MonoBehaviour {
         bool isGrounded = Physics.Raycast(transform.position + new Vector3(0.0f,distToGround,0.0f),
                 -Vector3.up, out hitInfo, distToGround + 0.1f);
 
+        if (isGrounded && canDoubleJump && !haveDoubleJump) {
+            haveDoubleJump = true;
+        }
+
         if (!isDodging) {
             velocity = movement * moveSpeed;
         }
@@ -71,23 +79,31 @@ public class RigidbodyMotor : MonoBehaviour {
             anim.SetFloat("Speed", velocity.magnitude);
         }
 
-        if (isGrounded & !isDodging) {
+        if ((isGrounded || haveDoubleJump) && !isDodging) {
             if (anim != null) {
                 anim.SetBool("isJumping", false);
             }
             vSpeed = 0.0f;
             if (jump) {
                 vSpeed = jumpSpeed;
+                if (!isGrounded && haveDoubleJump) {
+                    haveDoubleJump = false;
+                }
+
                 if (anim != null) {
                     anim.SetBool("isJumping", true);
                 }
             }
         }
 
-        if (dodge && isGrounded && !isDodging) {
+        if (dodge && (isGrounded || haveDoubleJump) && !isDodging) {
             isDodging = true;
             dodgeDir = Vector3.Scale(movement, new Vector3(1,0,1));
             hSpeed = dodgeSpeed;
+            
+            if (!isGrounded && haveDoubleJump) {
+                haveDoubleJump = false;
+            }
         }
 
         if (isDodging) {

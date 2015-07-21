@@ -26,9 +26,9 @@ public class PlayerInput : MonoBehaviour {
         float vmove = Input.GetAxis("Vertical");
         float hlook = Input.GetAxis("Mouse X");
         float vlook = Input.GetAxis("Mouse Y");
-        bool jump = (bool)Input.GetButton("Jump");
-        bool dodge = (bool)Input.GetButton("Dodge");
-        bool activate = (bool)Input.GetButton("Use");
+        bool jump = (bool)Input.GetButtonDown("Jump");
+        bool dodge = (bool)Input.GetButtonDown("Dodge");
+        bool activate = (bool)Input.GetButtonDown("Use");
         bool fire = (bool)Input.GetButton("Fire1");
 
         if (!player.isAcceptingInput()) {
