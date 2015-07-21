@@ -29,14 +29,15 @@ public class PlayerInput : MonoBehaviour {
         bool jump = (bool)Input.GetButtonDown("Jump");
         bool dodge = (bool)Input.GetButtonDown("Dodge");
         bool activate = (bool)Input.GetButtonDown("Use");
-        bool fire = (bool)Input.GetButton("Fire1");
+        bool startFire = (bool)Input.GetButtonDown("Fire1");
+        bool stopFire = (bool)Input.GetButtonUp("Fire1");
 
         if (!player.isAcceptingInput()) {
             hmove = vmove = hlook = vlook = 0.0f;
-            jump = activate = fire = false;
+            jump = activate = startFire = stopFire = false;
         }
 
-        if (fire) {
+        if (startFire) {
             lockCursor();
         }
 
@@ -56,8 +57,10 @@ public class PlayerInput : MonoBehaviour {
             Camera.main.transform.RotateAround(transform.position, transform.right, -vlook * lookSpeed * Time.deltaTime);
         }
 
-        if (fire) {
-            player.fireGun();
+        if (startFire) {
+            player.setFiring(true);
+        } else if (stopFire) {
+            player.setFiring(false);
         }
 
         if (activate) {

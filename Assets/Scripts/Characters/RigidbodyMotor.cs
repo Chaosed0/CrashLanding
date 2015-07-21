@@ -21,6 +21,12 @@ public class RigidbodyMotor : MonoBehaviour {
     private Vector3 dodgeDir = new Vector3(0,0,0);
     private bool haveDoubleJump = true;
 
+    public delegate void Dodge(bool inAir);
+    public event Dodge OnDodge;
+
+    public delegate void Jump(bool inAir);
+    public event Jump OnJump;
+
 	private void Start() {
         body = GetComponent<Rigidbody>();
         character = GetComponent<Character>();
@@ -89,6 +95,7 @@ public class RigidbodyMotor : MonoBehaviour {
                 if (!isGrounded && haveDoubleJump) {
                     haveDoubleJump = false;
                 }
+                OnJump(!isGrounded);
 
                 if (anim != null) {
                     anim.SetBool("isJumping", true);
@@ -104,6 +111,7 @@ public class RigidbodyMotor : MonoBehaviour {
             if (!isGrounded && haveDoubleJump) {
                 haveDoubleJump = false;
             }
+            OnDodge(!isGrounded);
         }
 
         if (isDodging) {

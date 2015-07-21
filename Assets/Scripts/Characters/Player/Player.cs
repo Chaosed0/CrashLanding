@@ -41,10 +41,8 @@ public class Player : MonoBehaviour {
         return acceptingInput;
     }
 
-    public void fireGun() {
-        if (gun != null) {
-            gun.Fire();
-        }
+    public void setFiring(bool firing) {
+        gun.setFiring(firing);
     }
 
     private void OnDied() {

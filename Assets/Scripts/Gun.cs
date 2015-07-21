@@ -13,11 +13,11 @@ public class Gun : MonoBehaviour {
     public Bullet bulletPrefab = null;
     public Marker markerPrefab = null;
 
+    public AudioSource gunAudio;
+
     private float recoilTimer = 0.1f;
     private float cooldownTimer = 0.0f;
-
-	void Start () {
-	}
+    private bool firing = false;
 
     void Update() {
         cooldownTimer += Time.deltaTime;
@@ -27,13 +27,18 @@ public class Gun : MonoBehaviour {
             float fraction = (recoilTime - recoilTimer) / recoilTime;
             transform.position = recoilReturn.position - recoilReturn.forward * recoilStrength * fraction;
         }
+        
+        if (firing && cooldownTimer >= cooldown) {
+            Fire();
+            gunAudio.Play();
+        }
+    }
+
+    public void setFiring(bool firing) {
+        this.firing = firing;
     }
 
     public void Fire() {
-        if (cooldownTimer < cooldown) {
-            return;
-        }
-
         /* Spawn the bullet */
         Quaternion bulletRot = randomBulletRot(Camera.main.transform);
         Instantiate(bulletPrefab, barrelPoint.position, bulletRot);
