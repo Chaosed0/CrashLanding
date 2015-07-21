@@ -30,4 +30,8 @@ public class HealthTextController : MonoBehaviour {
             healthText.color = Color.Lerp(flashOnChange, originalColor, flashTimer/flashTime);
         }
     }
+
+    void OnEnable() {
+        flashTimer = 0.0f;
+    }
 }
