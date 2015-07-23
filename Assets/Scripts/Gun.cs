@@ -6,7 +6,8 @@ public class Gun : MonoBehaviour {
     public Transform barrelPoint;
     public int damage = 100;
     public float bulletSpread = 5.0f;
-    public float recoilStrength = 0.1f;
+    public Vector3 recoil = new Vector3(-0.1f, 0.0f, 0.0f);
+    public Vector3 recoilRot = new Vector3(1.0f, 0.0f, 0.0f);
     public float recoilTime = 0.1f;
     public float cooldown = 0.1f;
     public float sphereCastSize = 0.25f;
@@ -25,7 +26,8 @@ public class Gun : MonoBehaviour {
         if (recoilTimer < recoilTime) {
             recoilTimer += Time.deltaTime;
             float fraction = (recoilTime - recoilTimer) / recoilTime;
-            transform.position = recoilReturn.position - recoilReturn.forward * recoilStrength * fraction;
+            transform.position = recoilReturn.position + recoilReturn.forward * recoil.x * fraction + recoilReturn.up * recoil.y * fraction + recoilReturn.right * recoil.z * fraction;
+            transform.rotation = Quaternion.Slerp(recoilReturn.rotation, recoilReturn.rotation * Quaternion.Euler(recoilRot.x, recoilRot.y, recoilRot.z), fraction);
         }
         
         if (firing && cooldownTimer >= cooldown) {

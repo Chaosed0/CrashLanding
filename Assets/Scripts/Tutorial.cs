@@ -30,8 +30,8 @@ public class Tutorial : MonoBehaviour {
     private bool doSwitch = true;
     private CheckSwitch switchCondition;
 
-    public delegate void TutorialOver();
-    public event TutorialOver OnTutorialOver;
+    public delegate void TutorialEnd();
+    public event TutorialEnd OnTutorialEnd;
 
     void Start() {
     }
@@ -94,8 +94,8 @@ public class Tutorial : MonoBehaviour {
                 break;
             case TutorialState.HOSTILES:
                 state = TutorialState.INIT;
-                if (OnTutorialOver != null) {
-                    OnTutorialOver();
+                if (OnTutorialEnd != null) {
+                    OnTutorialEnd();
                     gameObject.SetActive(false);
                 }
                 break;

@@ -6,10 +6,10 @@ public class ActivateAfterTutorial : MonoBehaviour {
     public GameObject[] objects;
 
     void Start() {
-        tutorial.OnTutorialOver += OnTutorialOver;
+        tutorial.OnTutorialEnd += OnTutorialEnd;
     }
 
-    void OnTutorialOver() {
+    void OnTutorialEnd() {
         for (int i = 0; i < objects.Length; i++) {
             objects[i].SetActive(true);
         }
