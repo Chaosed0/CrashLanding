@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 using Pathfinding;
 using System;
 using System.Collections.Generic;
@@ -114,6 +113,7 @@ public class RadiusModifier : MonoModifier {
 		return true;
 	}
 	
+	[System.Flags]
 	enum TangentType {
 		OuterRight = 1 << 0,
 		InnerRightLeft = 1 << 1,
@@ -138,7 +138,7 @@ public class RadiusModifier : MonoModifier {
 	}
 	
 	/** Draws a circle segment */
-	void DrawCircle (Vector3 p1, float rad, Color col, float start = 0, float end = (float)Math.PI*2.0f) {
+	void DrawCircleSegment (Vector3 p1, float rad, Color col, float start = 0, float end = (float)Math.PI*2.0f) {
 		Vector3 last = new Vector3((float)Math.Cos(start),0,(float)Math.Sin(start))*rad + p1;
 		for (float t=start; t < end;t += 2.0f*(float)Math.PI/200f) {
 			Vector3 p = new Vector3((float)Math.Cos(t),0,(float)Math.Sin(t))*rad + p1;

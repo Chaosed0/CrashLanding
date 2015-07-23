@@ -1,6 +1,5 @@
 
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
 
@@ -102,7 +101,7 @@ namespace Pathfinding {
 		/** Includes rotation in calculations.
 		 * This is slower since a lot more matrix multiplications are needed but gives more flexibility.
 		 */
-		public bool useRotation = false;
+		public bool useRotation;
 	
 		/** cached transform component */
 		protected Transform tr;
@@ -238,9 +237,9 @@ namespace Pathfinding {
 			Gizmos.color = GizmoColor;
 	
 			for ( int i=0;i<tbuffer.Length; i += 3 ){
-				Vector3 v1 = (Vector3)gizmoBuffer[tbuffer[i+0]];
-				Vector3 v2 = (Vector3)gizmoBuffer[tbuffer[i+1]];
-				Vector3 v3 = (Vector3)gizmoBuffer[tbuffer[i+2]];
+				var v1 = (Vector3)gizmoBuffer[tbuffer[i+0]];
+				var v2 = (Vector3)gizmoBuffer[tbuffer[i+1]];
+				var v3 = (Vector3)gizmoBuffer[tbuffer[i+2]];
 	
 				Gizmos.DrawLine ( v1, v2 );
 				Gizmos.DrawLine ( v2, v3 );

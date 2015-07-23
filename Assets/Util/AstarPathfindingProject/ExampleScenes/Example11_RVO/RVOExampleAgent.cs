@@ -1,4 +1,3 @@
-//#define RVOImp
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -93,6 +92,10 @@ public class RVOExampleAgent : MonoBehaviour {
 			AnimationCurve curveB = AnimationCurve.Linear (0,current.b,1,col.b);
 			
 			AnimationClip clip = new AnimationClip ();
+#if !(UNITY_4_3 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_4_8)
+			// Needed to make Unity5 happy
+			clip.legacy = true;
+#endif
 			clip.SetCurve ("",typeof(Material),"_TintColor.r",curveR);
 			clip.SetCurve ("",typeof(Material),"_TintColor.g",curveG);
 			clip.SetCurve ("",typeof(Material),"_TintColor.b",curveB);

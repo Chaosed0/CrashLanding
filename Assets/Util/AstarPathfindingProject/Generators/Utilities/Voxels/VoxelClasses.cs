@@ -1,6 +1,3 @@
-
-//#define ASTARDEBUG
-#define ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,8 +10,8 @@ using Pathfinding.Voxels;
 namespace Pathfinding.Voxels {
 #if ASTAR_RECAST_VOXEL_DEBUG
 	public static class VoxelSerializeUtility {
-
 		public static byte[] SerializeVoxelAreaCompactData (VoxelArea v) {
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			System.IO.MemoryStream stream = new System.IO.MemoryStream();
 			System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream);
 			
@@ -41,9 +38,13 @@ namespace Pathfinding.Voxels {
 			}
 			writer.Close();
 			return stream.ToArray();
+#else
+			throw new System.NotImplementedException ("This method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
+#endif
 		}
 		
 		public static byte[] SerializeVoxelAreaData (VoxelArea v) {
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			System.IO.MemoryStream stream = new System.IO.MemoryStream();
 			System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream);
 			
@@ -69,10 +70,13 @@ namespace Pathfinding.Voxels {
 			stream.Close();
 			stream2.Close();
 			return bytes;
+#else
+			throw new System.NotImplementedException ("This method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
+#endif
 		}
 		
 		public static void DeserializeVoxelAreaData (byte[] bytes, VoxelArea target) {
-			
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			Ionic.Zip.ZipFile zip = new Ionic.Zip.ZipFile();
 			System.IO.MemoryStream stream = new System.IO.MemoryStream();
 			stream.Write(bytes,0,bytes.Length);
@@ -97,10 +101,13 @@ namespace Pathfinding.Voxels {
 				spans[i].top = reader.ReadUInt32();
 			}
 			target.linkedSpans = spans;
+#else
+			throw new System.NotImplementedException ("This method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
+#endif
 		}
 		
 		public static void DeserializeVoxelAreaCompactData (byte[] bytes, VoxelArea target) {
-			
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			System.IO.MemoryStream stream = new System.IO.MemoryStream(bytes);
 			System.IO.BinaryReader reader = new System.IO.BinaryReader(stream);
 			int width = reader.ReadInt32();
@@ -128,10 +135,13 @@ namespace Pathfinding.Voxels {
 			target.compactCells = cells;
 			target.compactSpans = spans;
 			target.areaTypes = areas;
+#else
+			throw new System.NotImplementedException ("This method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
+#endif
 		}
 		
 		public static void MergeVoxelAreaData (VoxelArea source, VoxelArea merge, int voxelWalkableClimb) {
-			
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			LinkedVoxelSpan[] spans1 = source.linkedSpans;
 			
 			int wd = source.width*source.depth;
@@ -146,79 +156,9 @@ namespace Pathfinding.Voxels {
 					i = spans1[i].next;
 				}
 			}
-			
-			/*for (int c=0;c<cells1.Length;c++) {
-				
-				int i1 = (int)cells1[c].index;
-				int i2 = (int)cells2[c].index;
-				int c1 = (int)i1 + (int)cells1[c].count;
-				int c2 = (int)i2 + (int)cells2[c].count;
-				
-				CompactVoxelSpan last;
-				int lastIndex;
-				int lastAreaType;
-				if (i1 < c1 && (i2 >= c2 || spans1[i1].y < spans2[i2].y)) {
-					last = spans1[i1];
-					lastAreaType = source.areaTypes[i1];
-					lastIndex = i1;
-					i1++;
-					spanCount++;
-				} else if (i2 < c2) {
-					last = spans2[i2];
-					lastAreaType = merge.areaTypes[i2];
-					lastIndex = i2;
-					i2++;
-					spanCount++;
-				} else {
-					continue;
-				}
-				
-				while (i1 < c1 || i2 < c2) {
-					
-					CompactVoxelSpan span;
-					int areaType;
-					int spanIndex;
-					
-					Debug.Log (i1 + " " + i2 + " " + c1 + " " + c2);
-					if (i1 < c1 && (i2 >= c2 || spans1[i1].y < spans2[i2].y)) {
-						span = spans1[i1];
-						spanIndex = i1;
-						areaType = source.areaTypes[i1];
-						i1++;
-					} else if (i2 < c2) {
-						span = spans2[i2];
-						areaType = merge.areaTypes[i2];
-						spanIndex = i2;
-						i2++;
-					} else {
-						throw new System.Exception ("This should not happen");
-					}
-					
-					Debug.Log (span.y + " " + (last.y+last.h));
-					if (span.y > last.y+last.h) {
-						last = span;
-						spanCount++;
-						continue;
-					} else {
-						last.h = System.Math.Max(last.h,span.y+span.h - last.y);
-					}
-				}
-			}
-			
-			CompactVoxelSpan[] spansResult = new CompactVoxelSpan[spanCount];
-			
-			Debug.Log (spans1.Length + " : " + spans2.Length + " -> " + spanCount);
-			
-			
-					int area;
-					//1 is flagMergeDistance, when a walkable flag is favored before an unwalkable one
-					if (Mathfx.Abs ((int)(span.y+span.h) - (int)(last.y+span.h)) <= voxelWalkableClimb) {
-						area = Mathfx.Max (lastAreaType,areaType);
-					}
-				}
-							
-					
-			}*/
+#else
+			throw new System.NotImplementedException ("This method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
+#endif
 		}
 		
 	}
@@ -245,7 +185,7 @@ namespace Pathfinding.Voxels {
 		/** The depth of the field along the z-axis. [Limit: >= 0] [Units: vx] */
 		public readonly int depth = 0;
 		
-#if !ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
+#if ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 		public VoxelCell[] cells;
 #endif
 		
@@ -268,7 +208,7 @@ namespace Pathfinding.Voxels {
 		public Vector3[] VectorDirection;
 		
 		public void Reset () {
-#if ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			ResetLinkedVoxelSpans();
 #else
 			for (int i=0;i<cells.Length;i++) cells[i].firstSpan = null;
@@ -279,7 +219,8 @@ namespace Pathfinding.Voxels {
 				compactCells[i].index = 0;
 			}
 		}
-		
+
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 		private void ResetLinkedVoxelSpans () {
 			int len = linkedSpans.Length;
 			linkedSpanCount = width*depth;
@@ -305,7 +246,8 @@ namespace Pathfinding.Voxels {
 			}
 			removedStackCount = 0;
 		}
-		
+#endif
+
 		public VoxelArea (int width, int depth) {
 			this.width = width;
 			this.depth = depth;
@@ -313,7 +255,7 @@ namespace Pathfinding.Voxels {
 			int wd = width*depth;
 			compactCells = new CompactVoxelCell[wd];
 			
-#if ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			// & ~0xF ensures it is a multiple of 16. Required for unrolling
 			linkedSpans = new LinkedVoxelSpan[((int)(wd*AvgSpanLayerCountEstimate) + 15)& ~0xF];
 			ResetLinkedVoxelSpans();
@@ -333,7 +275,7 @@ namespace Pathfinding.Voxels {
 			int wd = width*depth;
 			
 			for (int x=0;x<wd;x++) {
-#if ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 				for (int s = x; s != -1 && linkedSpans[s].bottom != InvalidSpanValue; s = linkedSpans[s].next) {
 					count++;
 				}
@@ -353,7 +295,7 @@ namespace Pathfinding.Voxels {
 			int wd = width*depth;
 			
 			for (int x=0;x<wd;x++) {
-#if ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 				for (int s = x; s != -1 && linkedSpans[s].bottom != InvalidSpanValue; s = linkedSpans[s].next) {
 					if (linkedSpans[s].area != 0) {
 						count++;
@@ -370,80 +312,109 @@ namespace Pathfinding.Voxels {
 			return count;
 		}
 		
-		
+
+#if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 		private int linkedSpanCount;
 		public LinkedVoxelSpan[] linkedSpans;
 		
 		private int[] removedStack = new int[128];
 		private int removedStackCount = 0;
-		
+
+		void PushToSpanRemovedStack (int index) {
+			// Make sure we don't overflow the list
+			if (removedStackCount == removedStack.Length) {
+				// Create a new list to hold recycled values
+				int[] st2 = new int[removedStackCount*4];
+				System.Buffer.BlockCopy(removedStack,0,st2,0,removedStackCount*sizeof(int));
+				removedStack = st2;
+			}
+
+			removedStack[removedStackCount] = index;
+			removedStackCount++;
+		}
+#endif
+
 		public void AddLinkedSpan (int index, uint bottom, uint top, int area, int voxelWalkableClimb) {
-#if !ASTAR_RECAST_ARRAY_BASED_LINKED_LIST
+#if ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			cells[index].AddSpan(bottom,top,area,voxelWalkableClimb);
 #else
-			
-			/* Check if the span is valid, otherwise we can replace it with a new (valid) span */
+			// linkedSpans[index] is the span with the lowest y-coordinate at the position x,z such that index=x+z*width
+			// i.e linkedSpans is a 2D array laid out in a 1D array (for performance and simplicity)
+
+			// Check if there is a root span, otherwise we can just add a new (valid) span and exit
 			if (linkedSpans[index].bottom == InvalidSpanValue) {
 				linkedSpans[index] = new LinkedVoxelSpan(bottom,top,area);
 				return;
 			}
-			
-			
+
 			int prev = -1;
+
+			// Original index, the first span we visited
 			int oindex = index;
-			
+
 			while (index != -1) {
 				if (linkedSpans[index].bottom > top) {
+					// If the current span's bottom higher up than the span we want to insert's top, then they do not intersect
+					// and we should just insert a new span here
 					break;
-					
 				} else if (linkedSpans[index].top < bottom) {
+					// The current span and the span we want to insert do not intersect
+					// so just skip to the next span (it might intersect)
 					prev = index;
 					index = linkedSpans[index].next;
 				} else {
-					if (linkedSpans[index].bottom < bottom) {
-						bottom = linkedSpans[index].bottom;
-					}
-					if (linkedSpans[index].top > top) {
-						top = linkedSpans[index].top;
+					// Intersection! Merge the spans
+
+					// Find the new bottom and top for the merged span
+					bottom = System.Math.Min (linkedSpans[index].bottom, bottom);
+					top = System.Math.Max (linkedSpans[index].top, top);
+					
+					// voxelWalkableClimb is flagMergeDistance, when a walkable flag is favored before an unwalkable one
+					// So if a walkable span intersects an unwalkable span, the walkable span can be up to voxelWalkableClimb
+					// below the unwalkable span and the merged span will still be walkable
+					if (System.Math.Abs ((int)top - (int)linkedSpans[index].top) <= voxelWalkableClimb) {
+						// linkedSpans[index] is the lowest span, but we might use that span's area anyway if it is walkable
+						area = System.Math.Max (area,linkedSpans[index].area);
 					}
 					
-					//1 is flagMergeDistance, when a walkable flag is favored before an unwalkable one
-					if (AstarMath.Abs ((int)top - (int)linkedSpans[index].top) <= voxelWalkableClimb) {
-						area = AstarMath.Max (area,linkedSpans[index].area);
-					}
-					
+					// Find the next span in the linked list
 					int next = linkedSpans[index].next;
 					if (prev != -1) {
+						// There is a previous span
+						// Remove this span from the linked list
 						linkedSpans[prev].next = next;
 						
-						if (removedStackCount == removedStack.Length) {
-							int[] st2 = new int[removedStackCount*4];
-							System.Buffer.BlockCopy(removedStack,0,st2,0,removedStackCount*sizeof(int));
-							removedStack = st2;
-						}
-						removedStack[removedStackCount] = index;
-						removedStackCount++;
-						
+						// Add this span index to a list for recycling
+						PushToSpanRemovedStack (index);
+
+						// Move to the next span in the list
 						index = next;
 					} else if (next != -1) {
+						// This was the root span and there is a span left in the linked list
+						// Remove this span from the linked list by assigning the next span as the root span
 						linkedSpans[oindex] = linkedSpans[next];
 						
-						if (removedStackCount == removedStack.Length) {
-							int[] st2 = new int[removedStackCount*4];
-							System.Buffer.BlockCopy(removedStack,0,st2,0,removedStackCount*sizeof(int));
-							removedStack = st2;
-						}
-						removedStack[removedStackCount] = next;
-						removedStackCount++;
+						// Recycle the old span index
+						PushToSpanRemovedStack (next);
 						
-						index = linkedSpans[oindex].next;
+						// Move to the next span in the list
+						// NOP since we just removed the current span, the next span
+						// we want to visit will have the same index as we are on now (i.e oindex)
 					} else {
+						// This was the root span and there are no other spans in the linked list
+						// Just replace the root span with the merged span and exit
 						linkedSpans[oindex] = new LinkedVoxelSpan(bottom,top,area);
 						return;
 					}
 				}
 			}
-			
+
+			// We now have a merged span that needs to be inserted
+			// and connected with the existing spans
+
+			// The new merged span will be inserted right after 'prev' (if it exists, otherwise before index)
+
+			// Make sure that we have enough room in our array
 			if (linkedSpanCount >= linkedSpans.Length) {
 				LinkedVoxelSpan[] tmp = linkedSpans;
 				int count = linkedSpanCount;
@@ -458,6 +429,8 @@ namespace Pathfinding.Voxels {
 				Debug.Log ("Layer estimate too low, doubling size of buffer.\nThis message is harmless.");
 			}
 			
+			// Take a node from the recycling stack if possible
+			// Otherwise create a new node (well, just a new index really)
 			int nextIndex;
 			if (removedStackCount > 0) {
 				removedStackCount--;
@@ -481,7 +454,7 @@ namespace Pathfinding.Voxels {
 				linkedSpans[nextIndex] = linkedSpans[oindex];
 				linkedSpans[oindex] = new LinkedVoxelSpan(bottom,top,area,nextIndex);
 			}
-#endif	
+#endif
 		}
 	}
 	
@@ -563,9 +536,7 @@ namespace Pathfinding.Voxels {
 	 */
 	public class VoxelContourSet {
 		public List<VoxelContour> conts;		// Pointer to all contours.
-		//public int nconts;				// Number of contours.
-		public Bounds bounds;	// Bounding box of the heightfield.
-		//public float cellSize, cellHeight;			// Cell size and height.
+		public Bounds bounds;					// Bounding box of the heightfield.
 	}
 	
 	/** VoxelContour used for recast graphs.
@@ -573,10 +544,10 @@ namespace Pathfinding.Voxels {
 	 */
 	public struct VoxelContour {
 		public int nverts;
-		public int[] verts;		// Vertex coordinates, each vertex contains 4 components.
+		public int[] verts;			// Vertex coordinates, each vertex contains 4 components.
 		public int[] rverts;		// Raw vertex coordinates, each vertex contains 4 components.
 		
-		public int reg;			// Region ID of the contour.
+		public int reg;				// Region ID of the contour.
 		public int area;			// Area ID of the contour.
 	}
 	
@@ -606,10 +577,8 @@ namespace Pathfinding.Voxels {
 			}
 			
 			VoxelSpan prev = null;
-			
 			VoxelSpan cSpan = firstSpan;
 			
-			//for (VoxelSpan cSpan = firstSpan; cSpan != null; cSpan = cSpan.next) {
 			while (cSpan != null) {
 				if (cSpan.bottom > span.top) {
 					break;
@@ -637,26 +606,6 @@ namespace Pathfinding.Voxels {
 						firstSpan = next;
 					}
 					cSpan = next;
-					
-					/*cSpan.bottom = cSpan.bottom < bottom ? cSpan.bottom : bottom;
-					cSpan.top = cSpan.top > top ? cSpan.top : top;
-					
-					if (cSpan.bottom < span.bottom) {
-						span.bottom = cSpan.bottom;
-					}
-					if (cSpan.top > span.top) {
-						span.top = cSpan.top;
-					}
-					
-					span.area = Mathfx.Min (span.area,cSpan.area);
-					VoxelSpan next = cSpan.next;
-					
-					if (prev != null) {
-						prev.next = next;
-					} else {
-						firstSpan = next;
-					}
-					cSpan = next;*/
 				}
 			}
 			
@@ -668,43 +617,6 @@ namespace Pathfinding.Voxels {
 				firstSpan = span;
 			}
 		}
-		
-		/*public void FilterWalkable (uint walkableHeight) {
-			VoxelSpan prev = null;
-			
-			for (VoxelSpan cSpan = firstSpan; cSpan != null; cSpan = cSpan.next) {
-				if (cSpan.area == 1) {
-					if (prev != null) {
-						prev.next = cSpan.next;
-					} else {
-						firstSpan = cSpan.next;
-					}
-				} else {
-					if (cSpan.next != null) {
-						cSpan.top = cSpan.next.bottom;
-					} else {
-						cSpan.top = VoxelArea.MaxHeight;
-					}
-					
-					uint val = cSpan.top-cSpan.bottom;
-					if (cSpan.top < cSpan.bottom) {
-						Debug.Log ((cSpan.top-cSpan.bottom));
-					}
-					
-					if (val < walkableHeight) {
-						if (prev != null) {
-							prev.next = cSpan.next;
-						} else {
-							firstSpan = cSpan.next;
-						}
-					} else {
-						prev = cSpan;
-						continue;
-					}
-				}
-				
-			}
-		}*/
 	}
 	
 	/** CompactVoxelCell used for recast graphs.
@@ -736,13 +648,6 @@ namespace Pathfinding.Voxels {
 			reg = 0;
 		}
 		
-		/*public CompactVoxelSpan (uint bottom, uint top) {
-			con = 24;
-			y = (ushort)bottom;
-			h = top-bottom;
-			area = 1;
-		}*/
-		
 		public void SetConnection (int dir, uint value) {
 			int shift = dir*6;
 			con  = (uint) ( (con & ~(0x3f << shift)) | ((value & 0x3f) << shift) );
@@ -751,9 +656,6 @@ namespace Pathfinding.Voxels {
 		public int GetConnection (int dir) {
 	        return ((int)con >> dir*6) & 0x3f;
 		}
-		
-		//const unsigned int shift = (unsigned int)dir*6;
-	      //  s.con = (con & ~(63 << shift)) | (((uint)value & 63) << shift);
 	}
 	
 	/** VoxelSpan used for recast graphs.
@@ -770,8 +672,6 @@ namespace Pathfinding.Voxels {
 		1 is a walkable span (triangle face up)
 		*/
 		public int area;
-		//public VoxelSpan () {
-		//}
 		
 		public VoxelSpan (uint b, uint t,int area) {
 			bottom = b;

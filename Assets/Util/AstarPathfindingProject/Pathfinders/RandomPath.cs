@@ -14,7 +14,7 @@ namespace Pathfinding {
 int theGScoreToStopAt = 50;
 
 //Create a path object
-RandomPath path = new RandomPath  (transform.position, theGScoreToStopAt);
+RandomPath path = RandomPath.Construct  (transform.position, theGScoreToStopAt);
 
 //Get the Seeker component which must be attached to this GameObject
 Seeker seeker = GetComponent<Seeker>();
@@ -59,9 +59,19 @@ seeker.StartPath (path,MyCompleteFunction);
 		int nodesEvaluatedRep;
 		
 		/** Random class */
-		System.Random rnd = new System.Random();
+		readonly System.Random rnd = new System.Random();
 
-		public override bool FloodingPath { get { return true; } }
+		public override bool FloodingPath {
+			get {
+				return true;
+			}
+		}
+
+		protected override bool hasEndPoint {
+			get {
+				return false;
+			}
+		}
 
 		public override void Reset () {
 			base.Reset ();
@@ -77,8 +87,6 @@ seeker.StartPath (path,MyCompleteFunction);
 			aim = Vector3.zero;
 			
 			nodesEvaluatedRep = 0;
-			
-			hasEndPoint = false;
 		}
 		
 		protected override void Recycle () {
@@ -109,7 +117,6 @@ seeker.StartPath (path,MyCompleteFunction);
 			endPoint = Vector3.zero;
 			
 			startIntPoint = (Int3)start;
-			hasEndPoint = false;
 			
 			return this;
 		}

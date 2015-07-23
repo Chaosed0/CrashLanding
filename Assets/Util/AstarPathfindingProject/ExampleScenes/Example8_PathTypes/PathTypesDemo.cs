@@ -8,16 +8,42 @@ using Pathfinding;
  * Since only the Pro version has access to many path types, it is only included in the pro version
  * \astarpro
  * 
+ * \see Pathfinding.ABPath
+ * \see Pathfinding.MultiTargetPath
+ * \see Pathfinding.ConstantPath
+ * \see Pathfinding.FleePath
+ * \see Pathfinding.RandomPath
+ * \see Pathfinding.FloodPath
+ * \see Pathfinding.FloodPathTracer
  */
 public class PathTypesDemo : MonoBehaviour {
-	public int activeDemo = 0;
-	
+	public DemoMode activeDemo = DemoMode.ABPath;
+
+	public enum DemoMode {
+		ABPath,
+		MultiTargetPath,
+		RandomPath,
+		FleePath,
+		ConstantPath,
+		FloodPath,
+		FloodPathTracer
+	}
+
+	/** Start of paths */
 	public Transform start;
+
+	/** Target point of paths */
 	public Transform end;
-	
+
+	/** Offset from the real path to where it is rendered.
+	 * Used to avoid z-fighting
+	 */
 	public Vector3 pathOffset;
-	
+
+	/** Material used for rendering paths */
 	public Material lineMat;
+
+	/** Material used for rendering result of the ConstantPath */
 	public Material squareMat;
 	public float lineWidth;
 	
@@ -26,9 +52,8 @@ public class PathTypesDemo : MonoBehaviour {
 	public int searchLength = 1000;
 	public int spread = 100;
 	public float aimStrength = 0;
-	//public LineRenderer lineRenderer;
 	
-	private Path lastPath = null;
+	Path lastPath = null;
 	
 	List<GameObject> lastRender = new List<GameObject>();
 	
@@ -102,19 +127,19 @@ public class PathTypesDemo : MonoBehaviour {
 		GUILayout.BeginArea (new Rect (5,5,220,Screen.height-10),"","Box");
 		
 		switch (activeDemo) {
-		case 0:
+		case DemoMode.ABPath:
 			GUILayout.Label ("Basic path. Finds a path from point A to point B."); break;
-		case 1:
+		case DemoMode.MultiTargetPath:
 			GUILayout.Label ("Multi Target Path. Finds a path quickly from one point to many others in a single search."); break;
-		case 2:
+		case DemoMode.RandomPath:
 			GUILayout.Label ("Randomized Path. Finds a path with a specified length in a random direction or biased towards some point when using a larger aim strenggth."); break;
-		case 3:
+		case DemoMode.FleePath:
 			GUILayout.Label ("Flee Path. Tries to flee from a specified point. Remember to set Flee Strength!"); break;
-		case 4:
+		case DemoMode.ConstantPath:
 			GUILayout.Label ("Finds all nodes which it costs less than some value to reach."); break;
-		case 5:
+		case DemoMode.FloodPath:
 			GUILayout.Label ("Searches the whole graph from a specific point. FloodPathTracer can then be used to quickly find a path to that point"); break;
-		case 6:
+		case DemoMode.FloodPathTracer:
 			GUILayout.Label ("Traces a path to where the FloodPath started. Compare the claculation times for this path with ABPath!\nGreat for TD games"); break;
 		}
 		
@@ -126,39 +151,36 @@ public class PathTypesDemo : MonoBehaviour {
 		
 		GUILayout.Label ("Click anywhere to recalculate the path. Hold Alt to continuously recalculate the path while the mouse is pressed.");
 		
-		if (activeDemo == 2 || activeDemo == 3 || activeDemo == 4) {
+		if (activeDemo == DemoMode.ConstantPath || activeDemo == DemoMode.RandomPath || activeDemo == DemoMode.FleePath) {
 			GUILayout.Label ("Search Distance ("+searchLength+")");
 			searchLength = Mathf.RoundToInt (GUILayout.HorizontalSlider (searchLength,0,100000));
 		}
 		
-		if (activeDemo == 2 || activeDemo == 3) {
+		if (activeDemo == DemoMode.RandomPath || activeDemo == DemoMode.FleePath) {
 			GUILayout.Label ("Spread ("+spread+")");
 			spread = Mathf.RoundToInt (GUILayout.HorizontalSlider (spread,0,40000));
 			
-			GUILayout.Label ((activeDemo == 2 ? "Aim strength" : "Flee strength") + " ("+aimStrength+")");
+			GUILayout.Label ((activeDemo == DemoMode.RandomPath ? "Aim strength" : "Flee strength") + " ("+aimStrength+")");
 			aimStrength = GUILayout.HorizontalSlider (aimStrength,0,1);
 		}
 		
-		if (activeDemo == 1) {
+		if (activeDemo == DemoMode.MultiTargetPath) {
 			GUILayout.Label ("Hold shift and click to add new target points. Hold ctr and click to remove all target points");
 		}
 		
-		if (GUILayout.Button ("A to B path")) activeDemo = 0;
-		if (GUILayout.Button ("Multi Target Path")) activeDemo = 1;
-		if (GUILayout.Button ("Random Path")) activeDemo = 2;
-		if (GUILayout.Button ("Flee path")) activeDemo = 3;
-		if (GUILayout.Button ("Constant Path")) activeDemo = 4;
-		if (GUILayout.Button ("Flood Path")) activeDemo = 5;
-		if (GUILayout.Button ("Flood Path Tracer")) activeDemo = 6;
+		if (GUILayout.Button ("A to B path")) activeDemo = DemoMode.ABPath;
+		if (GUILayout.Button ("Multi Target Path")) activeDemo = DemoMode.MultiTargetPath;
+		if (GUILayout.Button ("Random Path")) activeDemo = DemoMode.RandomPath;
+		if (GUILayout.Button ("Flee path")) activeDemo = DemoMode.FleePath;
+		if (GUILayout.Button ("Constant Path")) activeDemo = DemoMode.ConstantPath;
+		if (GUILayout.Button ("Flood Path")) activeDemo = DemoMode.FloodPath;
+		if (GUILayout.Button ("Flood Path Tracer")) activeDemo = DemoMode.FloodPathTracer;
 		
 		GUILayout.EndArea ();
 	}
 	
 	/** Get the path back */
 	public void OnPathComplete (Path p) {
-		//System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch ();
-		//watch.Start ();
-		
 		//To prevent it from creating new GameObjects when the application is quitting when using multithreading.
 		if(lastRender == null) return;
 		
@@ -321,7 +343,7 @@ public class PathTypesDemo : MonoBehaviour {
 	}
 	
 	/** Destroys all previous render objects */
-	public void ClearPrevious () {
+	void ClearPrevious () {
 		for (int i=0;i<lastRender.Count;i++) {
 			Destroy (lastRender[i]);
 		}
@@ -329,7 +351,7 @@ public class PathTypesDemo : MonoBehaviour {
 	}
 	
 	/** Clears renders on application quit */
-	public void OnApplicationQuit () {
+	void OnApplicationQuit () {
 		ClearPrevious ();
 		lastRender = null;
 	}
@@ -337,11 +359,11 @@ public class PathTypesDemo : MonoBehaviour {
 	private FloodPath lastFlood = null;
 	
 	/** Starts a path specified by PathTypesDemo.activeDemo */
-	public void DemoPath () {
+	void DemoPath () {
 		
 		Path p = null;
 		
-		if (activeDemo == 0) {
+		if (activeDemo == DemoMode.ABPath) {
 			p = ABPath.Construct (start.position,end.position, OnPathComplete);
 			
 			if (agents != null && agents.Length > 0) {
@@ -353,10 +375,8 @@ public class PathTypesDemo : MonoBehaviour {
 				}
 				avg /= pts.Count;
 				for (int i=0;i<agents.Length;i++) pts[i] -= avg;
-				//List<Vector3> pts = Pathfinding.PathUtilities.GetSpiralPoints (agents.Length, 0.2f);
 				
 				Pathfinding.PathUtilities.GetPointsAroundPoint (end.position, AstarPath.active.graphs[0] as IRaycastableGraph, pts, 0, 0.2f);
-				//for (int i=0;i<pts.Count;i++) pts[i] += end.position;
 				for (int i=0;i<agents.Length;i++) {
 					if (agents[i] == null) continue;
 					
@@ -364,32 +384,31 @@ public class PathTypesDemo : MonoBehaviour {
 					agents[i].UpdatePath();
 				}
 			}
-		} else if (activeDemo == 1) {
+		} else if (activeDemo == DemoMode.MultiTargetPath) {
 			MultiTargetPath mp = MultiTargetPath.Construct (multipoints.ToArray (), end.position, null, OnPathComplete);
 			p = mp;
-		} else if (activeDemo == 2) {
+		} else if (activeDemo == DemoMode.RandomPath) {
 			RandomPath rp = RandomPath.Construct (start.position,searchLength, OnPathComplete);
 			rp.spread = spread;
 			rp.aimStrength = aimStrength;
 			rp.aim = end.position;
 			
 			p = rp;
-		} else if (activeDemo == 3) {
+		} else if (activeDemo == DemoMode.FleePath) {
 			FleePath fp = FleePath.Construct (start.position, end.position, searchLength, OnPathComplete);
 			fp.aimStrength = aimStrength;
 			fp.spread = spread;
 			
 			p = fp;
-		} else if (activeDemo == 4) {
-			StartCoroutine(Constant());
+		} else if (activeDemo == DemoMode.ConstantPath) {
+			StartCoroutine(CalculateConstantPath());
 			p = null;
-		} else if (activeDemo == 5) {
+		} else if (activeDemo == DemoMode.FloodPath) {
 			FloodPath fp = FloodPath.Construct (end.position, null);
 			lastFlood = fp;
 			p = fp;
-		} else if (activeDemo == 6 && lastFlood != null) {
+		} else if (activeDemo == DemoMode.FloodPathTracer && lastFlood != null) {
 			FloodPathTracer fp = FloodPathTracer.Construct (end.position, lastFlood, OnPathComplete);
-			
 			
 			p = fp;
 		}
@@ -400,7 +419,7 @@ public class PathTypesDemo : MonoBehaviour {
 		}
 	}
 	
-	public IEnumerator Constant () {
+	public IEnumerator CalculateConstantPath () {
 		ConstantPath constPath = ConstantPath.Construct (end.position, searchLength, OnPathComplete);
 		AstarPath.StartPath (constPath);
 		lastPath = constPath;

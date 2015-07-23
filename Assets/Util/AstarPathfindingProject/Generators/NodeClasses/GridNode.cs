@@ -1,15 +1,33 @@
-//#define ASTAR_NoTagPenalty
-#define ASTAR_GRID_CUSTOM_CONNECTIONS //@SHOWINEDITOR Disabling this will reduce memory usage and improve performance slightly but you will not be able to add custom connections to grid nodes using e.g the NodeLink component.
 #define ASTAR_CONSTANT_PENALTY
-using System;
 using Pathfinding;
 using System.Collections.Generic;
 using Pathfinding.Serialization;
 using UnityEngine;
 
 namespace Pathfinding {
-	public class GridNode : GraphNode
-	{
+
+	/** Base class for GridNode and LevelGridNode */
+	public abstract class GridNodeBase : GraphNode {
+
+		protected GridNodeBase (AstarPath astar) : base (astar) {
+		}
+
+		protected int nodeInGridIndex;
+
+		/** The index of the node in the grid.
+		 * This is x + z*graph.width (+ y*graph.width*graph.depth if this is a LayerGridGraph)
+		 * So you can get the X and Z indices using
+		 * \code
+		 * int index = node.NodeInGridIndex;
+		 * int x = index % graph.width;
+		 * int z = index / graph.width;
+		 * // where graph is GridNode.GetGridGraph (node.graphIndex), i.e the graph the nodes are contained in.
+		 * \endcode
+		 */
+		public int NodeInGridIndex { get { return nodeInGridIndex;} set { nodeInGridIndex = value; }}
+	}
+
+	public class GridNode : GridNodeBase {
 
 		public GridNode (AstarPath astar) : base (astar) {
 		}
@@ -18,29 +36,21 @@ namespace Pathfinding {
 		private static GridGraph[] _gridGraphs = new GridGraph[0];
 		public static GridGraph GetGridGraph (uint graphIndex) { return _gridGraphs[(int)graphIndex]; }
 
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 		public GraphNode[] connections;
 		public uint[] connectionCosts;
 #endif
-		
+
 		public static void SetGridGraph (int graphIndex, GridGraph graph) {
 			if (_gridGraphs.Length <= graphIndex) {
-				GridGraph[] gg = new GridGraph[graphIndex+1];
+				var gg = new GridGraph[graphIndex+1];
 				for (int i=0;i<_gridGraphs.Length;i++) gg[i] = _gridGraphs[i];
 				_gridGraphs = gg;
 			}
-			
+
 			_gridGraphs[graphIndex] = graph;
 		}
-		
-		// Fallback
-		
-		[System.ObsoleteAttribute ("This method has been deprecated. Please use NodeInGridIndex instead.", true)]
-		public int GetIndex () { return 0; }
-		
-		// end fallback
-		
-		protected int nodeInGridIndex;
+
 		protected ushort gridFlags;
 
 		/** Internal use only */
@@ -52,16 +62,16 @@ namespace Pathfinding {
 		const int GridFlagsConnectionOffset = 0;
 		const int GridFlagsConnectionBit0 = 1 << GridFlagsConnectionOffset;
 		const int GridFlagsConnectionMask = 0xFF << GridFlagsConnectionOffset;
-		
+
 		const int GridFlagsWalkableErosionOffset = 8;
 		const int GridFlagsWalkableErosionMask = 1 << GridFlagsWalkableErosionOffset;
-		
+
 		const int GridFlagsWalkableTmpOffset = 9;
 		const int GridFlagsWalkableTmpMask = 1 << GridFlagsWalkableTmpOffset;
-		
+
 		const int GridFlagsEdgeNodeOffset = 10;
 		const int GridFlagsEdgeNodeMask = 1 << GridFlagsEdgeNodeOffset;
-		
+
 		/** Returns true if the node has a connection in the specified direction.
 		 * The dir parameter corresponds to directions in the grid as:
 		 \code
@@ -80,14 +90,14 @@ namespace Pathfinding {
 		public bool GetConnectionInternal (int dir) {
 			return (gridFlags >> dir & GridFlagsConnectionBit0) != 0;
 		}
-		
+
 		/** Enables or disables a connection in a specified direction on the graph.
 		 *	\see GetConnectionInternal
 		*/
 		public void SetConnectionInternal (int dir, bool value) {
 			unchecked { gridFlags = (ushort)(gridFlags & ~((ushort)1 << GridFlagsConnectionOffset << dir) | (value ? (ushort)1 : (ushort)0) << GridFlagsConnectionOffset << dir); }
 		}
-		
+
 		/** Disables all grid connections from this node.
 		 * \note Other nodes might still be able to get to this node. Therefore it is recommended to also disable the relevant connections on adjacent nodes.
 		*/
@@ -96,7 +106,7 @@ namespace Pathfinding {
 				gridFlags = (ushort)(gridFlags & ~GridFlagsConnectionMask);
 			}
 		}
-		
+
 		public bool EdgeNode {
 			get {
 				return (gridFlags & GridFlagsEdgeNodeMask) != 0;
@@ -105,7 +115,7 @@ namespace Pathfinding {
 				unchecked { gridFlags = (ushort)(gridFlags & ~GridFlagsEdgeNodeMask | (value ? GridFlagsEdgeNodeMask : 0)); }
 			}
 		}
-		
+
 		/** Stores walkability before erosion is applied.
 		  * Used by graph updating.
 		*/
@@ -117,7 +127,7 @@ namespace Pathfinding {
 				unchecked { gridFlags = (ushort)(gridFlags & ~GridFlagsWalkableErosionMask | (value ? (ushort)GridFlagsWalkableErosionMask : (ushort)0)); }
 			}
 		}
-		
+
 		/** Temporary variable used by graph updating */
 		public bool TmpWalkable {
 			get {
@@ -127,19 +137,7 @@ namespace Pathfinding {
 				unchecked { gridFlags = (ushort)(gridFlags & ~GridFlagsWalkableTmpMask | (value ? (ushort)GridFlagsWalkableTmpMask : (ushort)0)); }
 			}
 		}
-		
-		/** The index of the node in the grid.
-		 * This is z*graphWidth + x.
-		 * So you can get the X and Z indices using
-		 * \begincode
-		 * int index = node.NodeInGridIndex;
-		 * int x = index % graph.width;
-		 * int z = index / graph.width;
-		 * // where graph is GridNode.GetGridGraph (node.graphIndex), i.e the graph the nodes are contained in.
-		 * \endcode
-		 */
-		public int NodeInGridIndex { get { return nodeInGridIndex;} set { nodeInGridIndex = value; }}
-		
+
 		public override void ClearConnections (bool alsoReverse) {
 			if (alsoReverse) {
 				GridGraph gg = GetGridGraph (GraphIndex);
@@ -150,12 +148,12 @@ namespace Pathfinding {
 						other.SetConnectionInternal(i < 4 ? ((i + 2) % 4) : (((5-2) % 4) + 4),false);
 					}
 				}
-				
+
 			}
-			
+
 			ResetConnectionsInternal ();
-			
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 			if ( alsoReverse ) {
 				if ( connections != null ) for (int i=0;i<connections.Length;i++) connections[i].RemoveConnection ( this );
 			}
@@ -163,34 +161,34 @@ namespace Pathfinding {
 			connectionCosts = null;
 #endif
 		}
-		
+
 		public override void GetConnections (GraphNodeDelegate del)
 		{
-			
+
 			GridGraph gg = GetGridGraph (GraphIndex);
 			int[] neighbourOffsets = gg.neighbourOffsets;
 			GridNode[] nodes = gg.nodes;
-			
+
 			for (int i=0;i<8;i++) {
 				if (GetConnectionInternal(i)) {
 					GridNode other = nodes[nodeInGridIndex + neighbourOffsets[i]];
 					if (other != null) del (other);
 				}
 			}
-			
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 			if ( connections != null ) for (int i=0;i<connections.Length;i++) del(connections[i]);
 #endif
 		}
-		
+
 		public override bool GetPortal (GraphNode other, List<Vector3> left, List<Vector3> right, bool backwards)
 		{
 			if (backwards) return true;
-			
+
 			GridGraph gg = GetGridGraph (GraphIndex);
 			int[] neighbourOffsets = gg.neighbourOffsets;
 			GridNode[] nodes = gg.nodes;
-			
+
 			for (int i=0;i<4;i++) {
 				if (GetConnectionInternal(i) && other == nodes[nodeInGridIndex + neighbourOffsets[i]]) {
 					Vector3 middle = ((Vector3)(position + other.position))*0.5f;
@@ -202,7 +200,7 @@ namespace Pathfinding {
 					return true;
 				}
 			}
-			
+
 			for (int i=4;i<8;i++) {
 				if (GetConnectionInternal(i) && other == nodes[nodeInGridIndex + neighbourOffsets[i]]) {
 					bool rClear = false;
@@ -213,14 +211,14 @@ namespace Pathfinding {
 							rClear = true;
 						}
 					}
-					
+
 					if (GetConnectionInternal((i-4+1)%4)) {
 						GridNode n2 = nodes[nodeInGridIndex + neighbourOffsets[(i-4+1)%4]];
 						if (n2.Walkable && n2.GetConnectionInternal(i-4)) {
 							lClear = true;
 						}
 					}
-					
+
 					Vector3 middle = ((Vector3)(position + other.position))*0.5f;
 					Vector3 cross = Vector3.Cross (gg.collision.up, (Vector3)(other.position-position));
 					cross.Normalize();
@@ -230,15 +228,15 @@ namespace Pathfinding {
 					return true;
 				}
 			}
-			
+
 			return false;
 		}
-		
+
 		public override void FloodFill (Stack<GraphNode> stack, uint region) {
 			GridGraph gg = GetGridGraph (GraphIndex);
 			int[] neighbourOffsets = gg.neighbourOffsets;
 			GridNode[] nodes = gg.nodes;
-			
+
 			for (int i=0;i<8;i++) {
 				if (GetConnectionInternal(i)) {
 					GridNode other = nodes[nodeInGridIndex + neighbourOffsets[i]];
@@ -248,8 +246,8 @@ namespace Pathfinding {
 					}
 				}
 			}
-			
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 			if ( connections != null ) for (int i=0;i<connections.Length;i++) {
 				GraphNode other = connections[i];
 				if (other.Area != region) {
@@ -259,26 +257,28 @@ namespace Pathfinding {
 			}
 #endif
 		}
-		
-#if !ASTAR_GRID_CUSTOM_CONNECTIONS
+
+#if ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 		public override void AddConnection (GraphNode node, uint cost) {
-			throw new System.NotImplementedException("GridNodes do not have support for adding manual connections");
+			throw new System.NotImplementedException("GridNodes do not have support for adding manual connections with your current settings."+
+				"\nPlease disable ASTAR_GRID_NO_CUSTOM_CONNECTIONS in the Optimizations tab in the A* Inspector");
 		}
 
 		public override void RemoveConnection (GraphNode node) {
-			throw new System.NotImplementedException("GridNodes do not have support for adding manual connections");
+			throw new System.NotImplementedException("GridNodes do not have support for adding manual connections with your current settings."+
+				"\nPlease disable ASTAR_GRID_NO_CUSTOM_CONNECTIONS in the Optimizations tab in the A* Inspector");
 		}
 #else
 		/** Add a connection from this node to the specified node.
 		 * If the connection already exists, the cost will simply be updated and
 		 * no extra connection added.
-		 * 
+		 *
 		 * \note Only adds a one-way connection. Consider calling the same function on the other node
 		 * to get a two-way connection.
 		 */
 		public override void AddConnection (GraphNode node, uint cost) {
-			
-			if (connections != null) { 
+
+			if (connections != null) {
 				for (int i=0;i<connections.Length;i++) {
 					if (connections[i] == node) {
 						connectionCosts[i] = cost;
@@ -286,41 +286,41 @@ namespace Pathfinding {
 					}
 				}
 			}
-			
+
 			int connLength = connections != null ? connections.Length : 0;
-			
-			GraphNode[] newconns = new GraphNode[connLength+1];
-			uint[] newconncosts = new uint[connLength+1];
+
+			var newconns = new GraphNode[connLength+1];
+			var newconncosts = new uint[connLength+1];
 			for (int i=0;i<connLength;i++) {
 				newconns[i] = connections[i];
 				newconncosts[i] = connectionCosts[i];
 			}
-			
+
 			newconns[connLength] = node;
 			newconncosts[connLength] = cost;
-			
+
 			connections = newconns;
 			connectionCosts = newconncosts;
 		}
-		
+
 		/** Removes any connection from this node to the specified node.
 		 * If no such connection exists, nothing will be done.
-		 * 
+		 *
 		 * \note This only removes the connection from this node to the other node.
 		 * You may want to call the same function on the other node to remove its eventual connection
 		 * to this node.
 		 */
 		public override void RemoveConnection (GraphNode node) {
-			
+
 			if (connections == null) return;
-			
+
 			for (int i=0;i<connections.Length;i++) {
 				if (connections[i] == node) {
-					
+
 					int connLength = connections.Length;
-			
-					GraphNode[] newconns = new GraphNode[connLength-1];
-					uint[] newconncosts = new uint[connLength-1];
+
+					var newconns = new GraphNode[connLength-1];
+					var newconncosts = new uint[connLength-1];
 					for (int j=0;j<i;j++) {
 						newconns[j] = connections[j];
 						newconncosts[j] = connectionCosts[j];
@@ -329,7 +329,7 @@ namespace Pathfinding {
 						newconns[j-1] = connections[j];
 						newconncosts[j-1] = connectionCosts[j];
 					}
-					
+
 					connections = newconns;
 					connectionCosts = newconncosts;
 					return;
@@ -337,26 +337,26 @@ namespace Pathfinding {
 			}
 		}
 #endif
-		
+
 		public override void UpdateRecursiveG (Path path, PathNode pathNode, PathHandler handler) {
 			GridGraph gg = GetGridGraph (GraphIndex);
 			int[] neighbourOffsets = gg.neighbourOffsets;
 			GridNode[] nodes = gg.nodes;
-			
+
 			UpdateG (path,pathNode);
 			handler.PushNode (pathNode);
-			
+
 			ushort pid = handler.PathID;
-			
-			for (int i=0;i<8;i++) {				
+
+			for (int i=0;i<8;i++) {
 				if (GetConnectionInternal(i)) {
 					GridNode other = nodes[nodeInGridIndex + neighbourOffsets[i]];
 					PathNode otherPN = handler.GetPathNode (other);
 					if (otherPN.parent == pathNode && otherPN.pathID == pid) other.UpdateRecursiveG (path, otherPN,handler);
 				}
 			}
-			
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 			if ( connections != null ) for (int i=0;i<connections.Length;i++) {
 				GraphNode other = connections[i];
 				PathNode otherPN = handler.GetPathNode (other);
@@ -365,9 +365,8 @@ namespace Pathfinding {
 #endif
 		}
 
-
 #if ASTAR_JPS
-		/*
+/*
 Non Cyclic
 [0] = -Y
 [1] = +X
@@ -388,7 +387,7 @@ Cyclic
 [6] = -Y
 [7] = -Y-X
 */
-		static byte[] JPSForced = new byte[] {
+		static byte[] JPSForced = {
 			0xFF, // Shouldn't really happen
 			0,
 			(1<<3),
@@ -398,8 +397,8 @@ Cyclic
 			(1<<5),
 			0
 		};
-	
-		static byte[] JPSForcedDiagonal = new byte[] {
+
+		static byte[] JPSForcedDiagonal = {
 			0xFF, // Shouldn't really happen
 			(1<<2),
 			0,
@@ -413,7 +412,7 @@ Cyclic
 		/** Permutation of the standard grid node neighbour order to put them on a clockwise cycle around the node.
 		 * Enables easier math in some cases
 		 */
-		static int[] JPSCyclic = new int[] {
+		static int[] JPSCyclic = {
 			6,
 			4,
 			2,
@@ -425,7 +424,7 @@ Cyclic
 		};
 
 		/** Inverse permutation of #JPSCyclic */
-		static int[] JPSInverseCyclic = new int[] {
+		static int[] JPSInverseCyclic = {
 			3, // 0
 			6, // 1
 			2, // 2
@@ -436,19 +435,19 @@ Cyclic
 			7  // 7
 		};
 
-		static int JPSNaturalStraightNeighbours = 1 << 4;
-		static int JPSNaturalDiagonalNeighbours = (1 << 5) | (1 << 4) | (1 << 3);
+		const int JPSNaturalStraightNeighbours = 1 << 4;
+		const int JPSNaturalDiagonalNeighbours = (1 << 5) | (1 << 4) | (1 << 3);
 
 		/** Memoization of what results to return from the Jump method.
 		 */
-		GridNode[] JPSCache = null;
+		GridNode[] JPSCache;
 
 		/** Each byte is a bitfield where each bit indicates if direction number i should return null from the Jump method.
 		 * Used as a cache.
 		 * I would like to make this a ulong instead, but that could run into data races.
 		 */
-		byte[] JPSDead = null;
-		ushort[] JPSLastCacheID = null;
+		byte[] JPSDead;
+		ushort[] JPSLastCacheID;
 
 		/** Executes a straight jump search.
 		 * \see http://en.wikipedia.org/wiki/Jump_point_search
@@ -502,7 +501,7 @@ Cyclic
 					node.JPSLastCacheID[threadID] = path.pathID;
 					node.JPSDead[threadID] = 0;
 				}
-				
+
 				// Cache earlier results, major optimization
 				// It is important to read from it once and then return the same result,
 				// if we read from it twice, we might get different results due to other threads clearing the array sometimes
@@ -513,7 +512,7 @@ Cyclic
 				}
 
 				if ( ((node.JPSDead[threadID] >> parentDir)&1) != 0 ) return null;
-				
+
 				// Special node (e.g end node), take care of
 				if ( handler.GetPathNode(node).flag2 ) {
 					//Debug.Log ("Found end Node!");
@@ -521,22 +520,22 @@ Cyclic
 					result = node;
 					break;
 				}
-				
-				#if ASTAR_GRID_CUSTOM_CONNECTIONS
+
+				#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 				// Special node which has custom connections, take care of
 				if ( node.connections != null && node.connections.Length > 0 ) {
 					result = node;
 					break;
 				}
 				#endif
-				
+
 
 				// These are the nodes this node is connected to, one bit for each of the 8 directions
 				int noncyclic = node.gridFlags;//We don't actually need to & with this because we don't use the other bits. & 0xFF;
 				int cyclic = 0;
 				for ( int i = 0; i < 8; i++ ) cyclic |= ((noncyclic >> i)&0x1) << JPSCyclic[i];
-				
-				
+
+
 				int forced = 0;
 				// Loop around to be able to assume -X is where we came from
 				cyclic = ((cyclic >> cyclicParentDir) | ((cyclic << 8) >> cyclicParentDir)) & 0xFF;
@@ -559,7 +558,7 @@ Cyclic
 				if ( (cyclic & (1 << forwardDir)) != 0 ) {
 
 					node = nodes[node.nodeInGridIndex + forwardOffset];
-					
+
 					//Debug.DrawLine ( (Vector3)position + Vector3.up*0.2f*(depth), (Vector3)other.position + Vector3.up*0.2f*(depth+1), Color.magenta);
 				} else {
 					result = null;
@@ -630,9 +629,9 @@ Cyclic
 				return this;
 			}
 
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 			// Special node which has custom connections, take care of
-			if ( this.connections != null && this.connections.Length > 0 ) {
+			if ( connections != null && connections.Length > 0 ) {
 				JPSCache[parentDir] = this;
 				return this;
 			}
@@ -642,7 +641,7 @@ Cyclic
 			int cyclic = 0;
 			for ( int i = 0; i < 8; i++ ) cyclic |= ((noncyclic >> i)&0x1) << JPSCyclic[i];
 
-			
+
 			int forced = 0;
 			int cyclicParentDir = JPSCyclic[parentDir];
 			// Loop around to be able to assume -X is where we came from
@@ -651,14 +650,14 @@ Cyclic
 			int natural;
 
 			for ( int i = 0; i < 8; i++ ) if ( ((cyclic >> i)&1) == 0 ) forced |= JPSForcedDiagonal[i];
-			
+
 			natural = JPSNaturalDiagonalNeighbours;
 			/*
 			if ( ((Vector3)position - new Vector3(1.5f,0,-1.5f)).magnitude < 0.5f ) {
 				Debug.Log (noncyclic + " " + parentDir + " " + cyclicParentDir);
 				Debug.Log (System.Convert.ToString (cyclic, 2)+"\n"+System.Convert.ToString (noncyclic, 2)+"\n"+System.Convert.ToString (natural, 2)+"\n"+System.Convert.ToString (forced, 2));
 			}*/
-			
+
 			// Don't force nodes we cannot reach anyway
 			forced &= cyclic;
 			natural &= cyclic;
@@ -748,11 +747,12 @@ Cyclic
 			for ( int i = 0; i < 8; i++ ) cyclic |= ((noncyclic >> i)&0x1) << JPSCyclic[i];
 
 			var parent = pathNode.parent != null ? pathNode.parent.node as GridNode : null;
-			int diff = parent != null ? parent.nodeInGridIndex - nodeInGridIndex : 0;
 			int parentDir = -1;
 
 			if ( parent != null ) {
-				int x2 = this.nodeInGridIndex % gg.width;
+				int diff = parent != null ? parent.nodeInGridIndex - nodeInGridIndex : 0;
+
+				int x2 = nodeInGridIndex % gg.width;
 				int x1 = parent.nodeInGridIndex % gg.width;
 				if ( diff < 0 ) {
 					if ( x1 == x2 ) {
@@ -826,7 +826,7 @@ Cyclic
 #endif
 
 					if ( oi < 4) {
-						other = JPSJumpStraight ( other, path, handler, JPSInverseCyclic[(i + 4 + cyclicParentDir) % 8], 0 );
+						other = JPSJumpStraight ( other, path, handler, JPSInverseCyclic[(i + 4 + cyclicParentDir) % 8] );
 					} else {
 						other = other.JPSJumpDiagonal (path, handler, JPSInverseCyclic[(i + 4 + cyclicParentDir) % 8]);
 					}
@@ -836,40 +836,40 @@ Cyclic
 						//Debug.DrawRay ( (Vector3)other.position, Vector3.up, Color.cyan);
 						//GridNode other = nodes[nodeInGridIndex + neighbourOffsets[i]];
 						//if (!path.CanTraverse (other)) continue;
-						
+
 						PathNode otherPN = handler.GetPathNode (other);
-						
+
 						if (otherPN.pathID != pid) {
 							otherPN.parent = pathNode;
 							otherPN.pathID = pid;
-							
+
 							otherPN.cost = (uint)(other.position - position).costMagnitude;//neighbourCosts[i];
-							
+
 							otherPN.H = path.CalculateHScore (other);
 							other.UpdateG (path, otherPN);
-							
+
 							//Debug.Log ("G " + otherPN.G + " F " + otherPN.F);
 							handler.PushNode (otherPN);
 							//Debug.DrawRay ((Vector3)otherPN.node.Position, Vector3.up,Color.blue);
 						} else {
-							
+
 							//If not we can test if the path from the current node to this one is a better one then the one already used
 							uint tmpCost = (uint)(other.position - position).costMagnitude;//neighbourCosts[i];
-							
+
 							if (pathNode.G+tmpCost+path.GetTraversalCost(other) < otherPN.G) {
 								//Debug.Log ("Path better from " + NodeIndex + " to " + otherPN.node.NodeIndex + " " + (pathNode.G+tmpCost+path.GetTraversalCost(other)) + " < " + otherPN.G);
 								otherPN.cost = tmpCost;
-								
+
 								otherPN.parent = pathNode;
-								
+
 								other.UpdateRecursiveG (path,otherPN, handler);
-								
+
 								//Or if the path from this node ("other") to the current ("current") is better
 							} else if (otherPN.G+tmpCost+path.GetTraversalCost (this) < pathNode.G) {
 								//Debug.Log ("Path better from " + otherPN.node.NodeIndex + " to " + NodeIndex + " " + (otherPN.G+tmpCost+path.GetTraversalCost (this)) + " < " + pathNode.G);
 								pathNode.parent = otherPN;
 								pathNode.cost = tmpCost;
-								
+
 								UpdateRecursiveG(path, pathNode, handler);
 							}
 						}
@@ -909,13 +909,13 @@ Cyclic
 				int[] neighbourOffsets = gg.neighbourOffsets;
 				uint[] neighbourCosts = gg.neighbourCosts;
 				GridNode[] nodes = gg.nodes;
-				 
+
 				for (int i=0;i<8;i++) {
 					if (GetConnectionInternal(i)) {
-						
+
 						GridNode other = nodes[nodeInGridIndex + neighbourOffsets[i]];
 						if (!path.CanTraverse (other)) continue;
-						
+
 						PathNode otherPN = handler.GetPathNode (other);
 
 #if ASTAR_CONSTANT_PENALTY
@@ -933,7 +933,7 @@ Cyclic
 
 							otherPN.H = path.CalculateHScore (other);
 							other.UpdateG (path, otherPN);
-							
+
 							//Debug.Log ("G " + otherPN.G + " F " + otherPN.F);
 							handler.PushNode (otherPN);
 							//Debug.DrawRay ((Vector3)otherPN.node.Position, Vector3.up,Color.blue);
@@ -951,11 +951,11 @@ Cyclic
 							{
 								//Debug.Log ("Path better from " + NodeIndex + " to " + otherPN.node.NodeIndex + " " + (pathNode.G+tmpCost+path.GetTraversalCost(other)) + " < " + otherPN.G);
 								otherPN.cost = tmpCost;
-								
+
 								otherPN.parent = pathNode;
-								
+
 								other.UpdateRecursiveG (path,otherPN, handler);
-								
+
 							//Or if the path from this node ("other") to the current ("current") is better
 							}
 #if ASTAR_CONSTANT_PENALTY
@@ -968,7 +968,7 @@ Cyclic
 								//Debug.Log ("Path better from " + otherPN.node.NodeIndex + " to " + NodeIndex + " " + (otherPN.G+tmpCost+path.GetTraversalCost (this)) + " < " + pathNode.G);
 								pathNode.parent = otherPN;
 								pathNode.cost = tmpCost;
-								
+
 								UpdateRecursiveG(path, pathNode, handler);
 							}
 						}
@@ -976,12 +976,12 @@ Cyclic
 				}
 			}
 
-#if ASTAR_GRID_CUSTOM_CONNECTIONS
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
 			if (connections != null) for (int i=0;i<connections.Length;i++) {
-				
+
 				GraphNode other = connections[i];
 				if (!path.CanTraverse (other)) continue;
-				
+
 				PathNode otherPN = handler.GetPathNode (other);
 
 #if ASTAR_CONSTANT_PENALTY
@@ -998,7 +998,7 @@ Cyclic
 
 					otherPN.H = path.CalculateHScore (other);
 					other.UpdateG (path, otherPN);
-					
+
 					//Debug.Log ("G " + otherPN.G + " F " + otherPN.F);
 					handler.PushNode (otherPN);
 					//Debug.DrawRay ((Vector3)otherPN.node.Position, Vector3.up,Color.blue);
@@ -1007,7 +1007,7 @@ Cyclic
 					// Sorry for the huge number of #ifs
 
 					//If not we can test if the path from the current node to this one is a better one then the one already used
-					
+
 #if ASTAR_CONSTANT_PENALTY
 					if (pathNode.G+tmpCost+path.GetTraversalCost(other) < otherPN.G)
 #else
@@ -1016,11 +1016,11 @@ Cyclic
 					{
 						//Debug.Log ("Path better from " + NodeIndex + " to " + otherPN.node.NodeIndex + " " + (pathNode.G+tmpCost+path.GetTraversalCost(other)) + " < " + otherPN.G);
 						otherPN.cost = tmpCost;
-						
+
 						otherPN.parent = pathNode;
-						
+
 						other.UpdateRecursiveG (path,otherPN, handler);
-						
+
 					//Or if the path from this node ("other") to the current ("current") is better
 					}
 #if ASTAR_CONSTANT_PENALTY
@@ -1032,14 +1032,14 @@ Cyclic
 						//Debug.Log ("Path better from " + otherPN.node.NodeIndex + " to " + NodeIndex + " " + (otherPN.G+tmpCost+path.GetTraversalCost (this)) + " < " + pathNode.G);
 						pathNode.parent = otherPN;
 						pathNode.cost = tmpCost;
-						
+
 						UpdateRecursiveG(path, pathNode, handler);
 					}
 				}
 			}
 #endif
 		}
-		
+
 		public override void SerializeNode (GraphSerializationContext ctx) {
 			base.SerializeNode (ctx);
 			ctx.writer.Write (position.x);
@@ -1047,7 +1047,7 @@ Cyclic
 			ctx.writer.Write (position.z);
 			ctx.writer.Write (gridFlags);
 		}
-		
+
 		public override void DeserializeNode (GraphSerializationContext ctx)
 		{
 			base.DeserializeNode (ctx);
@@ -1058,27 +1058,27 @@ Cyclic
 
 		public override void AddConnection (GraphNode node, uint cost)
 		{
-			throw new NotImplementedException ();
+			throw new System.NotImplementedException ();
 		}
 
 		public override void ClearConnections (bool alsoReverse)
 		{
-			throw new NotImplementedException ();
+			throw new System.NotImplementedException ();
 		}
 
 		public override void GetConnections (GraphNodeDelegate del)
 		{
-			throw new NotImplementedException ();
+			throw new System.NotImplementedException ();
 		}
 
 		public override void Open (Path path, PathNode pathNode, PathHandler handler)
 		{
-			throw new NotImplementedException ();
+			throw new System.NotImplementedException ();
 		}
 
 		public override void RemoveConnection (GraphNode node)
 		{
-			throw new NotImplementedException ();
+			throw new System.NotImplementedException ();
 		}
 #endif
 	}

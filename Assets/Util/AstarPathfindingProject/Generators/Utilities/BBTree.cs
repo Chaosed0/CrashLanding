@@ -1,27 +1,23 @@
 //#define ASTARDEBUG   //"BBTree Debug" If enables, some queries to the tree will show debug lines. Turn off multithreading when using this since DrawLine calls cannot be called from a different thread
 
-//#define ASTAR_OLD_BBTREE //@SHOWINEDITOR Use class based BBTree implementation instead of struct based. Struct based is better for runtime performance and memory, but class based scans slightly faster.
 using System;
 using UnityEngine;
 using Pathfinding;
-using System.Collections.Generic;
 
-namespace Pathfinding
-{
+namespace Pathfinding {
 	/** Axis Aligned Bounding Box Tree.
-	 * Holds a bounding box tree of triangles.\n
-	 * \b Performance: Insertion - Practically O(1) - About 0.003 ms
+	 * Holds a bounding box tree of triangles.
+	 *
 	 * \astarpro
 	 */
-	public class BBTree
-	{
+	public class BBTree {
 
 #if !ASTAR_OLD_BBTREE
 
 		/** Holds an Axis Aligned Bounding Box Tree used for faster node lookups.
 		 * \astarpro */
 		BBTreeBox[] arr = new BBTreeBox[6];
-		int count = 0;
+		int count;
 		public INavmeshHolder graph;
 
 		public BBTree (INavmeshHolder graph) {
@@ -43,7 +39,7 @@ namespace Pathfinding
 
 		void EnsureCapacity ( int c ) {
 			if ( arr.Length < c ) {
-				var narr = new BBTreeBox[System.Math.Max ( c , (int)(arr.Length*1.5f))];
+				var narr = new BBTreeBox[Math.Max ( c , (int)(arr.Length*1.5f))];
 				for ( int i = 0; i < count; i++ ) {
 					narr[i] = arr[i];
 				}
@@ -122,7 +118,7 @@ namespace Pathfinding
 			
 			if ( count == 0 ) return new NNInfo(null);
 			
-			NNInfo nnInfo = new NNInfo ();
+			var nnInfo = new NNInfo ();
 			
 			SearchBox (0,p, constraint, ref nnInfo);
 			
@@ -140,7 +136,7 @@ namespace Pathfinding
 
 			if ( count == 0 ) return new NNInfo(null);
 			
-			NNInfo nnInfo = new NNInfo (null);
+			var nnInfo = new NNInfo (null);
 			
 			SearchBoxCircle (0,p, radius, constraint, ref nnInfo);
 			
@@ -163,17 +159,17 @@ namespace Pathfinding
 		/** Queries the tree for the closest node to \a p constrained by the NNConstraint trying to improve an existing solution.
 		  * Note that this function will, unlike QueryCircle, only fill in the constrained node.
 		  * If you want a node not constrained by any NNConstraint, do an additional search with constraint = NNConstraint.None
-		  * 
-		  * This search will start from the \a previous NNInfo and improve it if possible.
-		  * Even if the search fails on this call, the solution will never be worse than \a previous.
-		  * 
+		  *
 		  * This method will completely ignore any Y-axis differences in positions.
-		  * 
+		  *
+		  * \param p Point to search around
+		  * \param constraint Optionally set to constrain which nodes to return
 		  * \param distance The best distance for the \a previous solution. Will be updated with the best distance
 		  * after this search. Will be positive infinity if no node could be found.
 		  * Set to positive infinity if there was no previous solution.
-		  * 
-		  * 
+		  * \param previous This search will start from the \a previous NNInfo and improve it if possible.
+		  * Even if the search fails on this call, the solution will never be worse than \a previous.
+		  *
 		  * \see QueryCircle
 		  */
 		public NNInfo QueryClosestXZ (Vector3 p, NNConstraint constraint, ref float distance, NNInfo previous) {
@@ -193,37 +189,37 @@ namespace Pathfinding
 
 			if (box.node != null) {
 				//Leaf node
-				//if (NodeIntersectsCircle (box.node,p,closestDist)) {
+
 				//Update the NNInfo
 				#if ASTARDEBUG
 				Debug.DrawLine ((Vector3)box.node.GetVertex(1) + Vector3.up*0.2f,(Vector3)box.node.GetVertex(2) + Vector3.up*0.2f,Color.red);
 				Debug.DrawLine ((Vector3)box.node.GetVertex(0) + Vector3.up*0.2f,(Vector3)box.node.GetVertex(1) + Vector3.up*0.2f,Color.red);
 				Debug.DrawLine ((Vector3)box.node.GetVertex(2) + Vector3.up*0.2f,(Vector3)box.node.GetVertex(0) + Vector3.up*0.2f,Color.red);
 				#endif
-				
-				Vector3 closest = box.node.ClosestPointOnNodeXZ (p);//NavMeshGraph.ClosestPointOnNode (box.node,graph.vertices,p);
-				
-				// XZ distance
-				float dist = (closest.x-p.x)*(closest.x-p.x)+(closest.z-p.z)*(closest.z-p.z);
-				
+
+				Vector3 closest = box.node.ClosestPointOnNodeXZ (p);
+
 				if (constraint == null || constraint.Suitable (box.node)) {
+					// XZ distance
+					float dist = (closest.x-p.x)*(closest.x-p.x)+(closest.z-p.z)*(closest.z-p.z);
+
 					if (nnInfo.constrainedNode == null) {
 						nnInfo.constrainedNode = box.node;
 						nnInfo.constClampedPosition = closest;
-						closestDist = (float)System.Math.Sqrt (dist);
+						closestDist = (float)Math.Sqrt (dist);
 					} else if (dist < closestDist*closestDist) {
 						nnInfo.constrainedNode = box.node;
 						nnInfo.constClampedPosition = closest;
-						closestDist = (float)System.Math.Sqrt (dist);
+						closestDist = (float)Math.Sqrt (dist);
 					}
 				}
-				//} else {
+
 				#if ASTARDEBUG
 				Debug.DrawLine ((Vector3)box.node.GetVertex(0),(Vector3)box.node.GetVertex(1),Color.blue);
 				Debug.DrawLine ((Vector3)box.node.GetVertex(1),(Vector3)box.node.GetVertex(2),Color.blue);
 				Debug.DrawLine ((Vector3)box.node.GetVertex(2),(Vector3)box.node.GetVertex(0),Color.blue);
 				#endif
-				//}
+
 			} else {
 				
 				#if ASTARDEBUG
@@ -247,16 +243,15 @@ namespace Pathfinding
 		/** Queries the tree for the closest node to \a p constrained by the NNConstraint trying to improve an existing solution.
 		  * Note that this function will, unlike QueryCircle, only fill in the constrained node.
 		  * If you want a node not constrained by any NNConstraint, do an additional search with constraint = NNConstraint.None
-		  * 
-		  * This search will start from the \a previous NNInfo and improve it if possible.
-		  * Even if the search fails on this call, the solution will never be worse than \a previous.
-		  * 
-		  * 
+		  *
+		  * \param p Point to search around
+		  * \param constraint Optionally set to constrain which nodes to return
 		  * \param distance The best distance for the \a previous solution. Will be updated with the best distance
 		  * after this search. Will be positive infinity if no node could be found.
 		  * Set to positive infinity if there was no previous solution.
-		  * 
-		  * 
+		  * \param previous This search will start from the \a previous NNInfo and improve it if possible.
+		  * Even if the search fails on this call, the solution will never be worse than \a previous.
+		  *
 		  * \see QueryCircle
 		  */
 		public NNInfo QueryClosest (Vector3 p, NNConstraint constraint, ref float distance, NNInfo previous) {
@@ -282,19 +277,19 @@ namespace Pathfinding
 					Debug.DrawLine ((Vector3)box.node.GetVertex(2) + Vector3.up*0.2f,(Vector3)box.node.GetVertex(0) + Vector3.up*0.2f,Color.red);
 					#endif
 					
-					Vector3 closest = box.node.ClosestPointOnNode (p);//NavMeshGraph.ClosestPointOnNode (box.node,graph.vertices,p);
-					
-					float dist = (closest-p).sqrMagnitude;
+					Vector3 closest = box.node.ClosestPointOnNode (p);
 					
 					if (constraint == null || constraint.Suitable (box.node)) {
+						float dist = (closest-p).sqrMagnitude;
+
 						if (nnInfo.constrainedNode == null) {
 							nnInfo.constrainedNode = box.node;
 							nnInfo.constClampedPosition = closest;
-							closestDist = (float)System.Math.Sqrt (dist);
+							closestDist = (float)Math.Sqrt (dist);
 						} else if (dist < closestDist*closestDist) {
 							nnInfo.constrainedNode = box.node;
 							nnInfo.constClampedPosition = closest;
-							closestDist = (float)System.Math.Sqrt (dist);
+							closestDist = (float)Math.Sqrt (dist);
 						}
 					}
 				} else {
@@ -325,10 +320,7 @@ namespace Pathfinding
 		}
 		
 		public MeshNode QueryInside (Vector3 p, NNConstraint constraint) {
-
-			if ( count == 0 ) return null;
-			
-			return SearchBoxInside (0,p, constraint);
+			return count != 0 ? SearchBoxInside (0,p, constraint) : null;
 		}
 		
 		MeshNode SearchBoxInside (int boxi, Vector3 p, NNConstraint constraint) {
@@ -477,13 +469,11 @@ namespace Pathfinding
 			}
 		}
 
-		//[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
 		struct BBTreeBox {
 			public Rect rect;
 
 			public MeshNode node;
 			public int left, right;
-			//public short depth;
 
 			public bool IsLeaf {
 				get {
@@ -493,18 +483,17 @@ namespace Pathfinding
 
 			public BBTreeBox (BBTree tree, MeshNode node) {
 				this.node = node;
-				//depth = 0;
-				Vector3 first = (Vector3)node.GetVertex(0);
-				Vector2 min = new Vector2(first.x,first.z);
+				var first = (Vector3)node.GetVertex(0);
+				var min = new Vector2(first.x,first.z);
 				Vector2 max = min;
 				
 				for (int i=1;i<node.GetVertexCount();i++) {
-					Vector3 p = (Vector3)node.GetVertex(i);
-					min.x = System.Math.Min (min.x,p.x);
-					min.y = System.Math.Min (min.y,p.z);
+					var p = (Vector3)node.GetVertex(i);
+					min.x = Math.Min (min.x,p.x);
+					min.y = Math.Min (min.y,p.z);
 					
-					max.x = System.Math.Max (max.x,p.x);
-					max.y = System.Math.Max (max.y,p.z);
+					max.x = Math.Max (max.x,p.x);
+					max.y = Math.Max (max.y,p.z);
 				}
 				
 				rect = Rect.MinMaxRect (min.x,min.y,max.x,max.y);
@@ -520,21 +509,18 @@ namespace Pathfinding
 			Gizmos.color = new Color (1,1,1,0.5F);
 			if ( count == 0 ) return;
 			//OnDrawGizmos (0, 0);
-			//Debug.Log ("Size " + arr.Length + " actual count " + count );
 		}
 
 		void OnDrawGizmos ( int boxi, int depth ) {
 			BBTreeBox box = arr[boxi];
 
-			Vector3 min = new Vector3 (box.rect.xMin,0,box.rect.yMin);
-			Vector3 max = new Vector3 (box.rect.xMax,0,box.rect.yMax);
+			var min = new Vector3 (box.rect.xMin,0,box.rect.yMin);
+			var max = new Vector3 (box.rect.xMax,0,box.rect.yMax);
 			
 			Vector3 center = (min+max)*0.5F;
 			Vector3 size = (max-center)*2;
 			center.y += depth * 0.2f;
 
-			//Gizmos.color = new Color (1,1,1,0.5F);
-			//Gizmos.DrawWireCube (center,size);
 			Gizmos.color = AstarMath.IntToColor (depth, 0.05f);//new Color (0,0,0,0.2F);
 			Gizmos.DrawCube (center,size);
 
@@ -654,15 +640,14 @@ namespace Pathfinding
 		/** Queries the tree for the closest node to \a p constrained by the NNConstraint trying to improve an existing solution.
 		  * Note that this function will, unlike QueryCircle, only fill in the constrained node.
 		  * If you want a node not constrained by any NNConstraint, do an additional search with constraint = NNConstraint.None
-		  * 
-		  * This search will start from the \a previous NNInfo and improve it if possible.
-		  * Even if the search fails on this call, the solution will never be worse than \a previous.
-		  * 
-		  * 
+		  *
+		  * \param p Point to search around
+		  * \param constraint Optionally set to constrain which nodes to return
 		  * \param distance The best distance for the \a previous solution. Will be updated with the best distance
 		  * after this search. Will be positive infinity if no node could be found.
 		  * Set to positive infinity if there was no previous solution.
-		  * 
+		  * \param previous This search will start from the \a previous NNInfo and improve it if possible.
+		  * Even if the search fails on this call, the solution will never be worse than \a previous.
 		  * 
 		  * \see QueryCircle
 		  */
@@ -698,11 +683,11 @@ namespace Pathfinding
 						if (nnInfo.constrainedNode == null) {
 							nnInfo.constrainedNode = box.node;
 							nnInfo.constClampedPosition = closest;
-							closestDist = (float)System.Math.Sqrt (dist);
+							closestDist = (float)Math.Sqrt (dist);
 						} else if (dist < closestDist*closestDist) {
 							nnInfo.constrainedNode = box.node;
 							nnInfo.constClampedPosition = closest;
-							closestDist = (float)System.Math.Sqrt (dist);
+							closestDist = (float)Math.Sqrt (dist);
 						}
 					}
 				} else {
@@ -811,11 +796,11 @@ namespace Pathfinding
 						if (nnInfo.constrainedNode == null) {
 							nnInfo.constrainedNode = box.node;
 							nnInfo.constClampedPosition = closest;
-							closestDist = (float)System.Math.Sqrt (dist);
+							closestDist = (float)Math.Sqrt (dist);
 						} else if (dist < closestDist*closestDist) {
 							nnInfo.constrainedNode = box.node;
 							nnInfo.constClampedPosition = closest;
-							closestDist = (float)System.Math.Sqrt (dist);
+							closestDist = (float)Math.Sqrt (dist);
 						}
 					}
 				//} else {
@@ -1004,41 +989,12 @@ namespace Pathfinding
 
 #endif
 
-
-		/*static void TestIntersections (BBTreeBox box, Vector3 p, float radius) {
-			
-			if (box == null) {
-				return;
-			}
-			
-			RectIntersectsCircle (box.rect,p,radius);
-			
-			TestIntersections (box.c1,p,radius);
-			TestIntersections (box.c2,p,radius);
-		}*/
-
 		static bool NodeIntersectsCircle (MeshNode node, Vector3 p, float radius) {
 			
 			if (float.IsPositiveInfinity(radius)) return true;
 
 			/** \bug Is not correct on the Y axis */
-			/*if (node.ContainsPoint ((Int3)p)) {
-				return true;
-			}*/
 			return (p - node.ClosestPointOnNode (p)).sqrMagnitude < radius*radius;
-			
-			/*Int3[] vertices = graph.vertices;
-			Vector3 p1 = (Vector3)vertices[node[0]], p2 = (Vector3)vertices[node[1]], p3 = (Vector3)vertices[node[2]];
-			
-			float r2 = radius*radius;
-			p1.y = p.y;
-			p2.y = p.y;
-			p3.y = p.y;
-			
-			return 	Mathfx.DistancePointSegmentStrict (p1,p2,p) < r2 ||
-					Mathfx.DistancePointSegmentStrict (p2,p3,p) < r2 ||
-					Mathfx.DistancePointSegmentStrict (p3,p1,p) < r2;*/
-			
 		}
 
 		/** Returns true if \a p is within \a radius from \a r.
@@ -1049,10 +1005,10 @@ namespace Pathfinding
 			if (float.IsPositiveInfinity(radius)) return true;
 			
 			Vector3 po = p;
-			p.x = System.Math.Max (p.x, r.xMin);
-			p.x = System.Math.Min (p.x, r.xMax);
-			p.z = System.Math.Max (p.z, r.yMin);
-			p.z = System.Math.Min (p.z, r.yMax);
+			p.x = Math.Max (p.x, r.xMin);
+			p.x = Math.Min (p.x, r.xMax);
+			p.z = Math.Max (p.z, r.yMin);
+			p.z = Math.Min (p.z, r.yMax);
 
 			// XZ squared magnitude comparison
 			return (p.x-po.x)*(p.x-po.x) + (p.z-po.z)*(p.z-po.z) < radius*radius;
@@ -1065,20 +1021,20 @@ namespace Pathfinding
 		
 		/** Returns the difference in area between \a r and \a r expanded to contain \a r2 */
 		static float ExpansionRequired (Rect r, Rect r2) {
-			float xMin = System.Math.Min (r.xMin,r2.xMin);
-			float xMax = System.Math.Max (r.xMax,r2.xMax);
-			float yMin = System.Math.Min (r.yMin,r2.yMin);
-			float yMax = System.Math.Max (r.yMax,r2.yMax);
+			float xMin = Math.Min (r.xMin,r2.xMin);
+			float xMax = Math.Max (r.xMax,r2.xMax);
+			float yMin = Math.Min (r.yMin,r2.yMin);
+			float yMax = Math.Max (r.yMax,r2.yMax);
 			
 			return (xMax-xMin)*(yMax-yMin)-RectArea (r);
 		}
 		
 		/** Returns a new rect which contains both \a r and \a r2 */
 		static Rect ExpandToContain (Rect r, Rect r2) {
-			float xMin = System.Math.Min (r.xMin,r2.xMin);
-			float xMax = System.Math.Max (r.xMax,r2.xMax);
-			float yMin = System.Math.Min (r.yMin,r2.yMin);
-			float yMax = System.Math.Max (r.yMax,r2.yMax);
+			float xMin = Math.Min (r.xMin,r2.xMin);
+			float xMax = Math.Max (r.xMax,r2.xMax);
+			float yMin = Math.Min (r.yMin,r2.yMin);
+			float yMax = Math.Max (r.yMax,r2.yMax);
 			
 			return Rect.MinMaxRect (xMin,yMin,xMax,yMax);
 		}
@@ -1089,17 +1045,12 @@ namespace Pathfinding
 		}
 
 #if ASTAR_OLD_BBTREE
-		public new void ToString () {
+		/** Writes the tree structure to stdout */
+		public void WriteTreeToConsole () {
 #if !NETFX_CORE || UNITY_EDITOR
 			Console.WriteLine ("Root "+(root.node != null ? root.node.ToString () : ""));
 #endif
-			
-			BBTreeBox c = root;
-			
-			Stack<BBTreeBox> stack = new Stack<BBTreeBox>();
-			stack.Push (c);
-			
-			c.WriteChildren (0);
+			root.WriteChildren (0);
 		}
 #else
 #endif

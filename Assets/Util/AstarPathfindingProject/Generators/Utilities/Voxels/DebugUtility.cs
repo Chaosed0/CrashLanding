@@ -1,6 +1,3 @@
-
-//#define ASTARDEBUG
-
 using UnityEngine;
 using System.Collections;
 

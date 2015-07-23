@@ -1,6 +1,3 @@
-//#define ASTARDEBUG
-//#define ASTAR_DEBUGREPLAY
-//#define ASTAR_RECAST_BFS //Enables an experimental optimization to recast. Faster scanning and updating but can sometimes fail to generate any navmesh at all (this is relatively rare though).
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -581,10 +578,7 @@ namespace Pathfinding.Voxels {
 			
 			int wd = w*d;
 			
-			int expandIterations = 8;
-			
 			int spanCount = voxelArea.compactSpanCount;
-			
 			
 
 #if ASTAR_RECAST_BFS
@@ -594,13 +588,15 @@ namespace Pathfinding.Voxels {
 			}
 			Pathfinding.Util.Memory.MemSet<ushort> (srcReg,0,sizeof(ushort));
 #else
+			int expandIterations = 8;
+
 			List<int> stack = Pathfinding.Util.ListPool<int>.Claim(1024);
 			ushort[] srcReg = new ushort[spanCount];
 			ushort[] srcDist = new ushort[spanCount];
 			ushort[] dstReg = new ushort[spanCount];
 			ushort[] dstDist = new ushort[spanCount];
-			
 #endif
+
 			ushort regionId = 2;
 			MarkRectWithRegion (0, borderSize, 0, d, 	(ushort)(regionId | BorderReg), srcReg);	regionId++;
 			MarkRectWithRegion (w-borderSize, w, 0, d, 	(ushort)(regionId | BorderReg), srcReg);	regionId++;
@@ -618,7 +614,6 @@ namespace Pathfinding.Voxels {
 			List<Int3> basins = Pathfinding.Util.ListPool<Int3>.Claim (100);
 			
 			// Find "basins"
-			DebugReplay.BeginGroup ("Basins");
 			for (int z=0, pz = 0;z < wd;z += w, pz++) {
 				for (int x=0;x < voxelArea.width;x++) {
 				
@@ -650,10 +645,7 @@ namespace Pathfinding.Voxels {
 							}
 						}
 						if (!anyBelow) {
-							//Debug.DrawRay (this.ConvertPosition(x,z,i),Vector3.down,Color.red);
-							DebugReplay.DrawCube (this.ConvertPosition(x,z,i),cellScale,Color.red);
 							basins.Add (new Int3(x,i,z));
-							//System.Console.WriteLine ("Basin at " + voxelArea.dist[i]);
 							level = System.Math.Max (level, voxelArea.dist[i]);
 						}
 					}
@@ -662,10 +654,8 @@ namespace Pathfinding.Voxels {
 			
 			//Start at maximum possible distance. & ~1 is rounding down to an even value
 			level = (uint)((level+1) & ~1);
-			
-			DebugReplay.EndGroup();
-			DebugReplay.BeginGroup ("BFS");
-			
+
+
 			List<Int3> st1 = Pathfinding.Util.ListPool<Int3>.Claim(300);
 			List<Int3> st2 = Pathfinding.Util.ListPool<Int3>.Claim(300);
 
@@ -673,8 +663,6 @@ namespace Pathfinding.Voxels {
 			//bool visited = new bool[voxelArea.compactSpanCount];
 			
 			for (;; level-= 2) {
-				DebugReplay.BeginGroup ("BFS " + level);
-				//System.Console.WriteLine ("Starting level " + level + " with st1.Count = " + st1.Count);
 				
 				int ocount = st1.Count;
 				int expandCount = 0;
@@ -682,10 +670,7 @@ namespace Pathfinding.Voxels {
 				if (ocount == 0) {
 					//int c = 0;
 					for (int q=0;q<basins.Count;q++) {
-						if (voxelArea.dist[basins[q].y] >= level) {
-							DebugReplay.DrawCube (this.ConvertPosition(basins[q].x,basins[q].z,basins[q].y)+Vector3.up,cellScale,new Color(0,1,0,0.5f));
-						}
-						
+
 						if (srcReg[basins[q].y] == 0 && voxelArea.dist[basins[q].y] >= level) {
 							
 							srcReg[basins[q].y] = 1;
@@ -708,9 +693,8 @@ namespace Pathfinding.Voxels {
 					
 					CompactVoxelSpan s = voxelArea.compactSpans[i];
 					int area = voxelArea.areaTypes[i];
-					
-					DebugReplay.DrawCube (this.ConvertPosition(x,z,i),cellScale,Mathfx.IntToColor(srcReg[i],0.7f));
-					
+
+
 					bool anyAbove = false;
 					for (int dir = 0; dir < 4; dir++) {
 						
@@ -762,10 +746,7 @@ namespace Pathfinding.Voxels {
 						
 						//int c = 0;
 							for (int q=0;q<basins.Count;q++) {
-								if (voxelArea.dist[basins[q].y] >= level) {
-									DebugReplay.DrawCube (this.ConvertPosition(basins[q].x,basins[q].z,basins[q].y)+Vector3.up,cellScale,new Color(0,1,0,0.5f));
-								}
-								
+
 								if (srcReg[basins[q].y] == 0 && voxelArea.dist[basins[q].y] >= level) {
 									
 									srcReg[basins[q].y] = 1;
@@ -798,13 +779,10 @@ namespace Pathfinding.Voxels {
 				}
 				
 				
-				//System.Console.WriteLine ("Added " + c + " basins");
-				DebugReplay.EndGroup();
 				if (level == 0) break;
 			}
-			
-			DebugReplay.EndGroup();
-			
+
+
 			Pathfinding.Util.ListPool<Int3>.Release (st1);
 			Pathfinding.Util.ListPool<Int3>.Release (st2);
 			Pathfinding.Util.ListPool<Int3>.Release (basins);

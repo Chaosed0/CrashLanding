@@ -11,14 +11,14 @@ namespace Pathfinding {
 		Custom
 	}
 
-	[System.Serializable]
 	/** Implements heuristic optimizations.
-	 * 
+	 *
 	 * \see heuristic-opt
 	 * \see Game AI Pro - Pathfinding Architecture Optimizations by Steve Rabin and Nathan R. Sturtevant
-	 * 
+	 *
 	 * \astarpro
 	 */
+	[System.Serializable]
 	public class EuclideanEmbedding {
 
 		public HeuristicOptimizationMode mode;
@@ -30,26 +30,38 @@ namespace Pathfinding {
 
 		public int spreadOutCount = 1;
 
+		[System.NonSerialized]
+		public bool dirty;
+
 		/**
 		 * Costs laid out as n*[int],n*[int],n*[int] where n is the number of pivot points.
 		 * Each node has n integers which is the cost from that node to the pivot node.
 		 * They are at around the same place in the array for simplicity and for cache locality.
-		 * 
+		 *
 		 * cost(nodeIndex, pivotIndex) = costs[nodeIndex*pivotCount+pivotIndex]
 		 */
 		uint[] costs = new uint[8];
-		int maxNodeIndex = 0;
+		int maxNodeIndex;
 
+		int pivotCount;
 
-		int pivotCount = 0;
+		GraphNode[] pivots;
 
-		[System.NonSerialized]
-		public bool dirty = false;
+		/*
+		 * Seed for random number generator.
+		 * Must not be zero
+		 */
+		uint ra = 12820163;
 
-		GraphNode[] pivots = null;
+		/*
+		 * Seed for random number generator.
+		 * Must not be zero
+		 */
+		uint rc = 1140671485;
 
-		uint ra = 12820163;    /* must not be zero */
-		uint rc = 1140671485;    /* must not be zero */
+		/*
+		 * Parameter for random number generator.
+		 */
 		uint rval = 0;
 
 		System.Object lockObj = new object();
@@ -57,8 +69,7 @@ namespace Pathfinding {
 		/** Simple linear congruential generator.
 		 * \see http://en.wikipedia.org/wiki/Linear_congruential_generator
 		 */
-		public uint GetRandom()
-		{
+		uint GetRandom() {
 			rval = (ra*rval + rc);
 			return rval;
 		}
@@ -68,7 +79,7 @@ namespace Pathfinding {
 				lock (lockObj) {
 					if ( index > maxNodeIndex ) {
 						if ( index >= costs.Length ) {
-							uint[] newCosts = new uint[System.Math.Max ( (int)(index*2), (int)(pivots.Length*2) )];
+							var newCosts = new uint[System.Math.Max (index*2, pivots.Length*2)];
 							for ( int i = 0; i < costs.Length; i++ ) newCosts[i] = costs[i];
 							costs = newCosts;
 						}
@@ -213,11 +224,11 @@ namespace Pathfinding {
 					if ( pivots[i] == null )
 						throw new System.Exception ("Invalid pivot nodes (null)");
 
-			UnityEngine.Debug.Log ("Recalculating costs...");
+			Debug.Log ("Recalculating costs...");
 			pivotCount = pivots.Length;
 
-			System.Action<int> startCostCalculation = null; 
-			
+			System.Action<int> startCostCalculation = null;
+
 			startCostCalculation = delegate ( int k ) {
 				GraphNode pivot = pivots[k];
 
@@ -233,7 +244,7 @@ namespace Pathfinding {
 					// instead of the node centers
 					// so we have to remove the cost for the first and last connection
 					// in each path
-					MeshNode mn = pivot as MeshNode;
+					var mn = pivot as MeshNode;
 					uint costOffset = 0;
 					if ( mn != null && mn.connectionCosts != null ) {
 						for ( int i = 0; i < mn.connectionCosts.Length; i++ ) {

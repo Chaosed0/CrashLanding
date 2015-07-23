@@ -1,5 +1,3 @@
-//#define ASTARDEBUG
-
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -159,7 +157,7 @@ namespace Pathfinding.Voxels {
 							
 							
 							if (CalcAreaOfPolygon2D(contour.verts, contour.nverts) > 0) {
-								Debug.DrawLine (p1,p2,Mathfx.IntToColor (reg,0.5F));
+								Debug.DrawLine (p1,p2,AstarMath.IntToColor (reg,0.5F));
 							} else {
 								Debug.DrawLine (p1,p2,Color.red);
 								
@@ -726,15 +724,15 @@ namespace Pathfinding.Voxels {
 					
 					#if ASTARDEBUG
 					Vector3 pos = ConvertPos (x,0,z)+new Vector3 ((voxelArea.DirectionX[dir] != 0) ? Mathf.Sign(voxelArea.DirectionX[dir]) : 0,0,(voxelArea.DirectionZ[dir]) != 0 ? Mathf.Sign(voxelArea.DirectionZ[dir]) : 0)*0.6F;
-					int dir2 = (dir+1) & 0x3;
+					//int dir2 = (dir+1) & 0x3;
 					//pos += new Vector3 ((voxelArea.DirectionX[dir2] != 0) ? Mathf.Sign(voxelArea.DirectionX[dir2]) : 0,0,(voxelArea.DirectionZ[dir2]) != 0 ? Mathf.Sign(voxelArea.DirectionZ[dir2]) : 0)*1.2F;
 					
 					//Debug.DrawLine (ConvertPos (x,0,z),pos,Color.cyan);
-					// Debug.DrawLine (previousPos2,pos,Color.blue);
+					Debug.DrawLine (previousPos2,pos,Color.blue);
 					previousPos2 = pos;
 					#endif
-					//Choose the edge corner
 					
+					//Choose the edge corner
 					bool isBorderVertex = false;
 					bool isAreaBorder = false;
 					
@@ -809,7 +807,8 @@ namespace Pathfinding.Voxels {
 					x = nx;
 					z = nz;
 					i = ni;
-					
+
+					// & 0x3 is the same as % 4 (modulo 4)
 					dir = (dir+3) & 0x3;	// Rotate CCW
 					
 					#if ASTARDEBUG
@@ -832,8 +831,7 @@ namespace Pathfinding.Voxels {
 			
 			#if ASTARDEBUG
 			Color col = new Color (Random.value,Random.value,Random.value);
-			
-			Vector3 offset = new Vector3 (0,Random.value*10,0);
+
 			for (int q=0, j = (verts.Count/4)-1;q<(verts.Count/4);j=q, q++) {
 				
 				int i4 = q*4;

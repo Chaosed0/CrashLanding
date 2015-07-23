@@ -1,7 +1,4 @@
-
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using Pathfinding;
 using Pathfinding.Voxels;
 
@@ -166,7 +163,10 @@ namespace Pathfinding.Voxels {
 		public static int Next(int i, int n) { return i+1 < n ? i+1 : 0; }
 	
 		/** Builds a polygon mesh from a contour set.
-		 * \param nvp Maximum allowed vertices per polygon. \note Currently locked to 3
+		 *
+		 * \param cset contour set to build a mesh from.
+		 * \param nvp Maximum allowed vertices per polygon. \warning Currently locked to 3.
+		 * \param mesh Results will be written to this mesh.
 		 */
 		public void BuildPolyMesh (VoxelContourSet cset, int nvp, out VoxelMesh mesh) {
 			
@@ -196,31 +196,16 @@ namespace Pathfinding.Voxels {
 				//return;
 			}
 			
-			//int[] vflags = new int[maxVertices];
-			
 			/** \todo Could be cached to avoid allocations */
 			Int3[] verts = new Int3[maxVertices];
 			/** \todo Could be cached to avoid allocations */
 			int[] polys = new int[maxTris*nvp];
 			
-			//int[] regs = new int[maxTris];
-			
-			//int[] areas = new int[maxTris];
-			
 			Pathfinding.Util.Memory.MemSet<int> (polys, 0xff, sizeof(int));
-			//for (int i=0;i<polys.Length;i++) {
-			//	polys[i] = 0xff;
-			//}
-			
-			//int[] nexVert = new int[maxVertices];
-			
-			//int[] firstVert = new int[VERTEX_BUCKET_COUNT];
 			
 			int[] indices = new int[maxVertsPerCont];
 			
 			int[] tris = new int[maxVertsPerCont*3];
-			
-			//ushort[] polys 
 			
 			int vertexIndex = 0;
 			int polyIndex = 0;
@@ -239,31 +224,13 @@ namespace Pathfinding.Voxels {
 					cont.verts[j*4+2] /= voxelArea.width;
 				}
 				
-				//yield return (GameObject.FindObjectOfType (typeof(MonoBehaviour)) as MonoBehaviour).StartCoroutine (
-				//Triangulate (cont.nverts, cont.verts, indices, tris);
 				int ntris = Triangulate (cont.nverts, cont.verts, ref indices, ref tris);
 				
-				/*if (ntris > cont.nverts-2) {
-					Debug.LogError (ntris + " "+cont.nverts+" "+cont.verts.Length+" "+(cont.nverts-2));
-				}
-				
-				if (ntris > maxVertsPerCont) {
-					Debug.LogError (ntris*3 + " "+maxVertsPerCont);
-				}
-				
-				int tmp = polyIndex;
-				
-				Debug.Log (maxTris + " "+polyIndex+" "+polys.Length+" "+ntris+" "+(ntris*3) + " " + cont.nverts);*/
 				int startIndex = vertexIndex;
 				for (int j=0;j<ntris*3; polyIndex++, j++) {
 					//@Error sometimes
 					polys[polyIndex] = tris[j]+startIndex;
 				}
-				
-				/*int tmp2 = polyIndex;
-				if (tmp+ntris*3 != tmp2) {
-					Debug.LogWarning (tmp+" "+(tmp+ntris*3)+" "+tmp2+" "+ntris*3);
-				}*/
 				
 				for (int j=0;j<cont.nverts; vertexIndex++, j++) {
 					verts[vertexIndex] = new Int3(cont.verts[j*4],cont.verts[j*4+1],cont.verts[j*4+2]);
@@ -280,14 +247,11 @@ namespace Pathfinding.Voxels {
 			int[] trimmedTris = new int[polyIndex];
 			
 			System.Buffer.BlockCopy (polys, 0, trimmedTris, 0, polyIndex*sizeof(int));
-			//for (int i=0;i<polyIndex;i++) {
-			//	trimmedTris[i] = polys[i];
-			//}
-			
 			
 			mesh.verts = trimmedVerts;
 			mesh.tris = trimmedTris;
 			
+			// Some debugging
 			/*for (int i=0;i<mesh.tris.Length/3;i++) {
 				
 				int p = i*3;
@@ -310,14 +274,15 @@ namespace Pathfinding.Voxels {
 			
 		}
 		
-		public int Triangulate(int n, int[] verts, ref int[] indices, ref int[] tris) {
+		int Triangulate(int n, int[] verts, ref int[] indices, ref int[] tris) {
 			
 			int ntris = 0;
 			int[] dst = tris;
 			
 			int dstIndex = 0;
-			
-			int on = n;
+
+			// Debug code
+			//int on = n;
 			
 			// The last bit of the index is used to indicate if the vertex can be removed.
 			for (int i = 0; i < n; i++)
@@ -328,8 +293,6 @@ namespace Pathfinding.Voxels {
 					indices[i1] |= 0x40000000;
 				}
 			}
-			
-			//yield return null;
 			
 			while (n > 3) {
 				
@@ -394,13 +357,11 @@ namespace Pathfinding.Voxels {
 				int i2 = Next(i1, n);
 				
 				#if ASTARDEBUG
-				//yield return null;
 				for (int j=0;j<n;j++) {
 					DrawLine (Prev(j,n),j,indices,verts,Color.red);
 				}
 				
 				DrawLine (i,i2,indices,verts,Color.magenta);
-				//yield return null;
 				for (int j=0;j<n;j++) {
 					DrawLine (Prev(j,n),j,indices,verts,Color.red);
 				}
@@ -438,13 +399,6 @@ namespace Pathfinding.Voxels {
 				}
 				//yield return null;
 			}
-			
-			//yield return null;
-			// Append the remaining triangle.
-			/**dst++ = indices[0] & 0x0fffffff;
-			*dst++ = indices[1] & 0x0fffffff;
-			*dst++ = indices[2] & 0x0fffffff;
-			ntris++;*/
 			
 			dst[dstIndex] = indices[0] & 0x0fffffff;
 			dstIndex++;

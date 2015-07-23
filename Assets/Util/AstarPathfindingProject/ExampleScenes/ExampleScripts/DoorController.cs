@@ -3,16 +3,16 @@ using System.Collections;
 using Pathfinding;
 
 public class DoorController : MonoBehaviour {
-	
+
 	private bool open = false;
-	
+
 	public int opentag = 1;
 	public int closedtag = 1;
 	public bool updateGraphsWithGUO = true;
 	public float yOffset = 5;
-	
+
 	Bounds bounds;
-	
+
 	public void Start () {
 		// Capture the bounds of the collider while it is closed
 		bounds = GetComponent<Collider>().bounds;
@@ -28,20 +28,15 @@ public class DoorController : MonoBehaviour {
 			SetState (!open);
 		}
 	}
-	
+
 	public void SetState (bool open) {
 		this.open = open;
-		
+
 		if (updateGraphsWithGUO) {
 			// Update the graph below the door
 			// Set the tag of the nodes below the door
 			// To something indicating that the door is open or closed
 			GraphUpdateObject guo = new GraphUpdateObject(bounds);
-	#if ConfigureTagsAsMultiple
-			guo.tags = new TagMask ();
-			guo.tags.tagsChange = 1 << bitToChange;
-			guo.tags.tagsSet = open ? 1 << bitToChange : 0;
-	#else
 			int tag = open ? opentag : closedtag;
 
 			// There are only 32 tags
@@ -50,8 +45,7 @@ public class DoorController : MonoBehaviour {
 			guo.modifyTag = true;
 			guo.setTag = tag;
 			guo.updatePhysics = false;
-	#endif
-			
+
 			AstarPath.active.UpdateGraphs (guo);
 		}
 

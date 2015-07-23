@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using Pathfinding;
 
@@ -28,14 +27,12 @@ seeker.StartPath (path,MyCompleteFunction);
 	 * \endcode
 	 * \astarpro */
 	public class FleePath : RandomPath {
-		
-		[System.Obsolete("Please use the Construct method instead")]
-		public FleePath (Vector3 start, Vector3 avoid, int length, OnPathDelegate callbackDelegate = null) : base (start,length,callbackDelegate) {
-			throw new System.Exception ("Please use the Construct method instead");
-		}
-		
+
+		/** Default constructor.
+		 * Do not use this. Instead use the static Construct method which can handle path pooling.
+		 */
 		public FleePath () {}
-		
+
 		/** Constructs a new FleePath.
 		 * The FleePath will be taken from a pool.
 		 */
@@ -44,14 +41,14 @@ seeker.StartPath (path,MyCompleteFunction);
 			p.Setup (start,avoid, searchLength, callback);
 			return p;
 		}
-		
+
 		protected void Setup (Vector3 start, Vector3 avoid, int searchLength, OnPathDelegate callback) {
 			Setup (start, searchLength, callback);
 			aim = avoid-start;
 			aim *= 10;
 			aim = start - aim;
 		}
-		
+
 		protected override void Recycle () {
 			PathPool<FleePath>.Recycle (this);
 		}

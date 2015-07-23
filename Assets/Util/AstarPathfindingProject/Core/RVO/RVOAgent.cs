@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
 using Pathfinding.RVO;
@@ -156,7 +155,7 @@ namespace Pathfinding.RVO.Sampled {
 
 			//watch1.Start ();
 			if (MaxNeighbours > 0) {
-				rangeSq = neighbourDist*neighbourDist;// 
+				rangeSq = neighbourDist*neighbourDist;
 				
 				//simulator.KDTree.GetAgentNeighbours (this, rangeSq);
 				simulator.Quadtree.Query (new Vector2(position.x,position.z), neighbourDist, this);
@@ -293,10 +292,7 @@ namespace Pathfinding.RVO.Sampled {
 
 		public struct VO {
 
-			//public 
 			public Vector2 origin, center;
-
-			//public float radius;
 
 			Vector2 line1, line2, dir1, dir2;
 
@@ -312,8 +308,9 @@ namespace Pathfinding.RVO.Sampled {
 			float weightFactor;
 
 			/** Creates a VO to avoid the half plane created by the point \a p0 and has a tangent in the direction of \a dir.
-			 * \param p0 a point on the half plane border
-			 * \param dir the normalized tangent to the half plane
+			 * \param p0 A point on the half plane border
+			 * \param dir The normalized tangent to the half plane
+			 * \param weightFactor relative amount of influence this VO should have on the agent
 			 */
 			public VO ( Vector2 offset, Vector2 p0, Vector2 dir, float weightFactor ) {
 				colliding = true;
@@ -732,7 +729,7 @@ namespace Pathfinding.RVO.Sampled {
 			Vector2 result = Vector2.zero;
 
 			if ( simulator.algorithm == Simulator.SamplingAlgorithm.GradientDecent ) {
-				if ( this.DebugDraw ) {
+				if ( DebugDraw ) {
 					const int PlotWidth = 40;
 					const float WorldPlotWidth = 15;
 
@@ -743,7 +740,7 @@ namespace Pathfinding.RVO.Sampled {
 							Vector2 dir = Vector2.zero;
 							float weight = 0;
 							for ( int i = 0; i < voCount; i++ ) {
-								float w = 0;
+								float w;
 								dir += vos[i].Sample (p-position2D, out w);
 								if ( w > weight ) weight = w;
 							}
@@ -793,7 +790,7 @@ namespace Pathfinding.RVO.Sampled {
 				}*/
 
 				{
-					Vector2 p = this.Velocity;
+					Vector2 p = Velocity;
 					float score;
 					Vector2 res = Trace ( vos, voCount, p, cutoff, out score );
 					

@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
 using Pathfinding.Util;
@@ -23,7 +22,7 @@ namespace Pathfinding {
 		 * 
 		 * If negative, no updates will be done. They must be manually triggered using #ForceUpdate
 		 */
-		public float updateInterval = 0;
+		public float updateInterval;
 		
 		float lastUpdateTime = -999;
 	

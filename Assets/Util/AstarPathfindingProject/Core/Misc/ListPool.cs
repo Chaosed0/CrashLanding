@@ -18,15 +18,13 @@ namespace Pathfinding.Util
 	 * After you have released a list, you should never use it again, if you do use it, you will
 	 * mess things up quite badly in the worst case.
 	 * 
-	 * // \warning This class is not thread safe
-	 * 
 	 * \since Version 3.2
 	 * \see Pathfinding.Util.StackPool
 	 */
 	public static class ListPool<T>
 	{
 		/** Internal pool */
-		static List<List<T>> pool;
+		static readonly List<List<T>> pool;
 		
 		/** When requesting a list with a specified capacity, search max this many lists in the pool before giving up.
 		 * Must be greater or equal to one.
@@ -53,9 +51,9 @@ namespace Pathfinding.Util
 					List<T> ls = pool[pool.Count-1];
 					pool.RemoveAt(pool.Count-1);
 					return ls;
-				} else {
-					return new List<T>();
 				}
+
+				return new List<T>();
 			}
 #endif		
 		}
@@ -92,9 +90,9 @@ namespace Pathfinding.Util
 						pool.RemoveAt(pool.Count-1);
 					}
 					return list;
-				} else {
-					return new List<T>(capacity);
 				}
+
+				return new List<T>(capacity);
 			}
 #endif
 		}
@@ -104,7 +102,7 @@ namespace Pathfinding.Util
 		 */
 		public static void Warmup (int count, int size) {
 			lock (pool) {
-				List<T>[] tmp = new List<T>[count];
+				var tmp = new List<T>[count];
 				for (int i=0;i<count;i++) tmp[i] = Claim (size);
 				for (int i=0;i<count;i++) Release (tmp[i]);
 			}
@@ -127,7 +125,7 @@ namespace Pathfinding.Util
 #if !ASTAR_OPTIMIZE_POOLING
 				for (int i=0;i<pool.Count;i++)
 					if (pool[i] == list)
-						throw new System.InvalidOperationException ("The List is released even though it is in the pool");
+						throw new InvalidOperationException ("The List is released even though it is in the pool");
 #endif
 			
 				pool.Add (list);

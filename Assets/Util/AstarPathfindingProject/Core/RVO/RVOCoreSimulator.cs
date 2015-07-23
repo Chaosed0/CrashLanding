@@ -251,7 +251,7 @@ namespace Pathfinding.RVO {
 		 */
 		public float DesiredDeltaTime { get { return desiredDeltaTime; } set { desiredDeltaTime = System.Math.Max (value,0.0f); }}
 
-		public float WallThickness { get { return wallThickness; } set { wallThickness = System.Math.Max (wallThickness, 0); }}
+		public float WallThickness { get { return wallThickness; } set { wallThickness = System.Math.Max (value, 0); }}
 
 		/** Use Interpolation.
 		 * If interpolation is enabled, agent positions will be interpolated on frames when no rvo calculation is done.
@@ -518,12 +518,16 @@ namespace Pathfinding.RVO {
 		public ObstacleVertex AddObstacle (Vector3 a, Vector3 b, float height) {
 			ObstacleVertex first = new ObstacleVertex ();
 			ObstacleVertex second = new ObstacleVertex ();
-			
+
+			first.layer = RVOLayer.DefaultObstacle;
+			second.layer = RVOLayer.DefaultObstacle;
+
 			first.prev = second;
 			second.prev = first;
 			first.next = second;
 			second.next = first;
-			
+
+
 			first.position = a;
 			second.position = b;
 			first.height = height;

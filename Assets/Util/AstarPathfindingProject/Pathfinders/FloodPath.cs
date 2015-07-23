@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Pathfinding
@@ -16,7 +15,7 @@ With this path type, it can all be handled easily.
 - Then when a unit is spawned or needs its path recalculated, start a FloodPathTracer path from it's position.
    It will then find the shortest path to the point specified when you called the FloodPath extremely quickly.
 - If you update the graph (for example place a tower in a TD game) or need to change the target point, you simply call a new FloodPath (and store it's reference).
- 
+
 \version From 3.2 and up, path traversal data is now stored in the path class.
 So you can now use other path types in parallel with this one.
 
@@ -47,9 +46,8 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 \ingroup paths
 
 */
-	public class FloodPath : Path
-	{
-		
+	public class FloodPath : Path {
+
 		public Vector3 originalStartPoint;
 		public Vector3 startPoint;
 		public GraphNode startNode;
@@ -61,23 +59,25 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 
 		protected Dictionary<GraphNode,GraphNode> parents;
 
-		public override bool FloodingPath { get { return true; } }
+		public override bool FloodingPath {
+			get {
+				return true;
+			}
+		}
 
 		public bool HasPathTo (GraphNode node) {
 			return parents != null && parents.ContainsKey (node);
 		}
-		
+
 		public GraphNode GetParent (GraphNode node) {
 			return parents[node];
 		}
-		
-		/** Creates a new FloodPath instance */
-		[System.Obsolete ("Please use the Construct method instead")]
-		public FloodPath (Vector3 start, OnPathDelegate callbackDelegate) {
-			Setup (start, callbackDelegate);
-			heuristic = Heuristic.None;
-		}
-		
+
+		/** Default constructor.
+		 * Do not use this. Instead use the static Construct method which can handle path pooling.
+		 */
+		public FloodPath () {}
+
 		public static FloodPath Construct (Vector3 start, OnPathDelegate callback = null) {
 			FloodPath p = PathPool<FloodPath>.GetPath ();
 			p.Setup (start, callback);
@@ -85,7 +85,7 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 		}
 
 		public static FloodPath Construct (GraphNode start, OnPathDelegate callback = null) {
-			if ( start == null ) throw new System.ArgumentNullException ("start");
+			if ( start == null ) throw new ArgumentNullException ("start");
 
 			FloodPath p = PathPool<FloodPath>.GetPath ();
 			p.Setup (start, callback);
@@ -116,13 +116,11 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 			parents = new Dictionary<GraphNode,GraphNode> ();
 			saveParents = true;
 		}
-		
-		public FloodPath () {}
-		
+
 		protected override void Recycle () {
 			PathPool<FloodPath>.Recycle (this);
 		}
-		
+
 		public override void Prepare (){
 			AstarProfiler.StartProfile ("Get Nearest");
 
@@ -130,7 +128,7 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 				//Initialize the NNConstraint
 				nnConstraint.tags = enabledTags;
 				NNInfo startNNInfo 	= AstarPath.active.GetNearest (originalStartPoint,nnConstraint);
-				
+
 				startPoint = startNNInfo.clampedPosition;
 				startNode = startNNInfo.node;
 			} else {
@@ -138,17 +136,17 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 			}
 
 			AstarProfiler.EndProfile ();
-			
+
 #if ASTARDEBUG
 			Debug.DrawLine ((Vector3)startNode.position,startPoint,Color.blue);
 #endif
-			
+
 			if (startNode == null) {
 				Error ();
 				LogError ("Couldn't find a close node to the start point");
 				return;
 			}
-			
+
 			if (!startNode.Walkable) {
 #if ASTARDEBUG
 				Debug.DrawRay (startPoint,Vector3.up,Color.red);
@@ -159,9 +157,9 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 				return;
 			}
 		}
-		
+
 		public override void Initialize () {
-			
+
 			PathNode startRNode = pathHandler.GetPathNode (startNode);
 			startRNode.node = startNode;
 			startRNode.pathID = pathHandler.PathID;
@@ -170,70 +168,66 @@ The easiest is to just modify the instance of PathIDConstraint which is created 
 			startRNode.G = GetTraversalCost (startNode);
 			startRNode.H = CalculateHScore (startNode);
 			parents[startNode] = null;
-			
-			/*if (recalcStartEndCosts) {
-				startNode.InitialOpen (open,hTarget,startIntPoint,this,true);
-			} else {*/
-				startNode.Open (this,startRNode,pathHandler);
-			//}
-			
+
+			startNode.Open (this,startRNode,pathHandler);
+
 			searchedNodes++;
-			
-			//any nodes left to search?
+
+			// Any nodes left to search?
 			if (pathHandler.HeapEmpty ()) {
 				CompleteState = PathCompleteState.Complete;
 			}
-			
+
 			currentR = pathHandler.PopNode ();
 		}
-		
+
 		/** Opens nodes until there are none left to search (or until the max time limit has been exceeded) */
 		public override void CalculateStep (long targetTick) {
-			
+
 			int counter = 0;
-			
+
 			//Continue to search while there hasn't ocurred an error and the end hasn't been found
 			while (CompleteState == PathCompleteState.NotCalculated) {
-				
+
 				searchedNodes++;
-				
+
 				AstarProfiler.StartFastProfile (4);
 				//Debug.DrawRay ((Vector3)currentR.node.Position, Vector3.up*2,Color.red);
-				
+
 				//Loop through all walkable neighbours of the node and add them to the open list.
 				currentR.node.Open (this,currentR,pathHandler);
-				
+
 				// Insert into internal search tree
 				if ( saveParents ) parents[currentR.node] = currentR.parent.node;
-				
+
 				AstarProfiler.EndFastProfile (4);
-				
+
 				//any nodes left to search?
 				if (pathHandler.HeapEmpty()) {
 					CompleteState = PathCompleteState.Complete;
 					break;
 				}
-				
+
 				//Select the node with the lowest F score and remove it from the open list
 				AstarProfiler.StartFastProfile (7);
 				currentR = pathHandler.PopNode ();
 				AstarProfiler.EndFastProfile (7);
-				
+
 				//Check for time every 500 nodes, roughly every 0.5 ms usually
 				if (counter > 500) {
-					
+
 					//Have we exceded the maxFrameTime, if so we should wait one frame before continuing the search since we don't want the game to lag
-					if (System.DateTime.UtcNow.Ticks >= targetTick) {
+					if (DateTime.UtcNow.Ticks >= targetTick) {
 						//Return instead of yield'ing, a separate function handles the yield (CalculatePaths)
 						return;
 					}
 					counter = 0;
-					
+
 					if (searchedNodes > 1000000) {
-						throw new System.Exception ("Probable infinite loop. Over 1,000,000 nodes searched");
+						throw new Exception ("Probable infinite loop. Over 1,000,000 nodes searched");
 					}
 				}
-				
+
 				counter++;
 			}
 		}
