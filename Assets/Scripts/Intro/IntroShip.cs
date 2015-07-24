@@ -27,7 +27,7 @@ public class IntroShip : MonoBehaviour {
 	void Update () {
         crashTimer += Time.deltaTime;
 
-        if (crashTimer >= crashTime) {
+        if (crashTimer >= crashTime * 0.95) {
             ship.localPosition = new Vector3(0,0,0);
             lookAtCamera.gameObject.SetActive(false);
             playerCamera.gameObject.SetActive(true);
@@ -39,10 +39,10 @@ public class IntroShip : MonoBehaviour {
                 OnIntroOver();
             }
             enabled = false;
+        } else {
+            float fraction = (crashTime - crashTimer) / crashTime;
+            ship.localPosition = initialPosition * fraction;
+            lookAtCamera.transform.LookAt(ship);
         }
-
-        float fraction = (crashTime - crashTimer) / crashTime;
-        ship.localPosition = initialPosition * fraction;
-        lookAtCamera.transform.LookAt(ship);
 	}
 }

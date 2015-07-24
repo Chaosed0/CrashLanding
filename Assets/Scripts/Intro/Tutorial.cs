@@ -108,6 +108,7 @@ public class Tutorial : MonoBehaviour {
                 break;
             case TutorialState.SHIP_POWER:
                 state = TutorialState.HOSTILES;
+                switchTime = 4.0f;
                 PlayNextClip();
                 break;
             case TutorialState.HOSTILES:
