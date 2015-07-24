@@ -11,6 +11,7 @@ enum TutorialState {
     FIRE,
     ALL_DONE,
     HOSTILES,
+    SHIP_POWER,
 };
 
 public class Tutorial : MonoBehaviour {
@@ -22,8 +23,9 @@ public class Tutorial : MonoBehaviour {
     public bool active = false;
 
     public BootupText bootupText;
-    public GameObject healthText;
     public Text tutorialText;
+    public GameObject healthText;
+    public GameObject shipPowerMeter;
 
     private TutorialState state = TutorialState.INIT;
     private float switchTimer = 0.0f;
@@ -94,6 +96,11 @@ public class Tutorial : MonoBehaviour {
                 PlayNextClip();
                 break;
             case TutorialState.HOSTILES:
+                state = TutorialState.SHIP_POWER;
+                shipPowerMeter.SetActive(true);
+                PlayNextClip();
+                break;
+            case TutorialState.SHIP_POWER:
                 state = TutorialState.INIT;
                 if (OnTutorialEnd != null) {
                     OnTutorialEnd();

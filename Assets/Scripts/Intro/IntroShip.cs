@@ -7,6 +7,8 @@ public class IntroShip : MonoBehaviour {
     public Camera lookAtCamera;
     public Camera playerCamera;
     public Tutorial tutorial;
+    public AudioSource audioSource;
+    public AudioClip explosion;
 
     private float crashTimer = 0.0f;
     private Vector3 initialPosition;
@@ -31,6 +33,8 @@ public class IntroShip : MonoBehaviour {
             tutorial.gameObject.SetActive(true);
             if (OnIntroOver != null) {
                 player.velocity = new Vector3(0, 10, 0);
+                audioSource.clip = explosion;
+                audioSource.Play();
                 OnIntroOver();
             }
             enabled = false;
