@@ -38,6 +38,7 @@ public class RigidbodyMotor : MonoBehaviour {
 	public void Move(Vector3 movement, float yaw) {
         if (character.isDead()) {
             anim.SetFloat("Speed", 0.0f);
+            anim.enabled = false;
             return;
         }
 
@@ -62,6 +63,7 @@ public class RigidbodyMotor : MonoBehaviour {
         if (character.isDead()) {
             if (anim) {
                 anim.SetFloat("Speed", 0.0f);
+                anim.enabled = false;
             }
             return;
         }

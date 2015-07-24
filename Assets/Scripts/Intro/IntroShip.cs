@@ -8,7 +8,8 @@ public class IntroShip : MonoBehaviour {
     public Camera playerCamera;
     public Tutorial tutorial;
     public AudioSource audioSource;
-    public AudioClip explosion;
+    public AudioClip explosionClip;
+    public Transform ship;
 
     private float crashTimer = 0.0f;
     private Vector3 initialPosition;
@@ -17,8 +18,8 @@ public class IntroShip : MonoBehaviour {
     public event IntroOver OnIntroOver;
 
 	void Start () {
-        initialPosition = transform.rotation * new Vector3(0, 0, -200);
-        transform.localPosition = initialPosition;
+        initialPosition = ship.rotation * new Vector3(0, 0, -200);
+        ship.localPosition = initialPosition;
         lookAtCamera.gameObject.SetActive(true);
         playerCamera.gameObject.SetActive(false);
 	}
@@ -27,13 +28,13 @@ public class IntroShip : MonoBehaviour {
         crashTimer += Time.deltaTime;
 
         if (crashTimer >= crashTime) {
-            transform.localPosition = new Vector3(0,0,0);
+            ship.localPosition = new Vector3(0,0,0);
             lookAtCamera.gameObject.SetActive(false);
             playerCamera.gameObject.SetActive(true);
-            tutorial.gameObject.SetActive(true);
+            tutorial.enabled = true;
             if (OnIntroOver != null) {
                 player.velocity = new Vector3(0, 10, 0);
-                audioSource.clip = explosion;
+                audioSource.clip = explosionClip;
                 audioSource.Play();
                 OnIntroOver();
             }
@@ -41,7 +42,7 @@ public class IntroShip : MonoBehaviour {
         }
 
         float fraction = (crashTime - crashTimer) / crashTime;
-        transform.localPosition = initialPosition * fraction;
-        lookAtCamera.transform.LookAt(transform);
+        ship.localPosition = initialPosition * fraction;
+        lookAtCamera.transform.LookAt(ship);
 	}
 }

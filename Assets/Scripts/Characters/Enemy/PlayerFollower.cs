@@ -2,7 +2,6 @@
 using System.Collections;
 using Pathfinding;
 
-[RequireComponent (typeof (Character))]
 public class PlayerFollower : MonoBehaviour {
     public float repathTime = 1.0f;
     public float waypointCloseDistance = 1.0f;
@@ -17,7 +16,6 @@ public class PlayerFollower : MonoBehaviour {
 
     private CharacterMotor motor;
     private RigidbodyMotor rigidMotor;
-    private Character character;
 
     void Start () {
         repathTimer = repathTime;
@@ -26,7 +24,6 @@ public class PlayerFollower : MonoBehaviour {
         seeker = GetComponent<Seeker>();
         motor = GetComponent<CharacterMotor>();
         rigidMotor = GetComponent<RigidbodyMotor>();
-        character = GetComponent<Character>();
     }
 
     void repath () {
@@ -46,10 +43,6 @@ public class PlayerFollower : MonoBehaviour {
     }
 
 	void Update () {
-        if (character.isDead()) {
-            return;
-        }
-
         Vector3 target = new Vector3(0,0,0);
         float yaw = 0.0f;
 

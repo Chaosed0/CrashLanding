@@ -10,8 +10,8 @@ enum TutorialState {
     JUMP,
     FIRE,
     ALL_DONE,
-    HOSTILES,
     SHIP_POWER,
+    HOSTILES,
 };
 
 public class Tutorial : MonoBehaviour {
@@ -20,12 +20,13 @@ public class Tutorial : MonoBehaviour {
     public AudioClip[] clips;
     public AudioSource source;
     public float switchTime = 1.0f;
-    public bool active = false;
 
     public BootupText bootupText;
     public Text tutorialText;
     public GameObject healthText;
     public GameObject shipPowerMeter;
+
+    public GameRules gameRules;
 
     private TutorialState state = TutorialState.INIT;
     private float switchTimer = 0.0f;
@@ -36,6 +37,15 @@ public class Tutorial : MonoBehaviour {
     public event TutorialEnd OnTutorialEnd;
 
     void Start() {
+        GameObject sharedLevelObject = GameObject.Find("SharedLevelObject");
+        if (sharedLevelObject != null) {
+            bool skipTutorial = sharedLevelObject.GetComponent<SharedLevelObject>().skipTutorial;
+            if (skipTutorial) {
+                healthText.SetActive(true);
+                shipPowerMeter.SetActive(true);
+                state = TutorialState.SHIP_POWER;
+            }
+        }
     }
 
 	void Update() {
@@ -91,20 +101,21 @@ public class Tutorial : MonoBehaviour {
                 doSwitch = true;
                 break;
             case TutorialState.ALL_DONE:
-                state = TutorialState.HOSTILES;
+                state = TutorialState.SHIP_POWER;
+                shipPowerMeter.SetActive(true);
                 bootupText.EndScroll();
                 PlayNextClip();
                 break;
-            case TutorialState.HOSTILES:
-                state = TutorialState.SHIP_POWER;
-                shipPowerMeter.SetActive(true);
+            case TutorialState.SHIP_POWER:
+                state = TutorialState.HOSTILES;
                 PlayNextClip();
                 break;
-            case TutorialState.SHIP_POWER:
+            case TutorialState.HOSTILES:
                 state = TutorialState.INIT;
                 if (OnTutorialEnd != null) {
                     OnTutorialEnd();
-                    gameObject.SetActive(false);
+                    gameRules.enabled = true;
+                    this.enabled = false;
                 }
                 break;
             default:

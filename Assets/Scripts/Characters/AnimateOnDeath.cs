@@ -8,11 +8,11 @@ public class AnimateOnDeath : MonoBehaviour {
 
     void Start() {
         GetComponent<Character>().OnDied += OnDied;
-        GetComponent<Expires>().active = false;
+        GetComponent<Expires>().enabled = false;
     }
 
     private void OnDied() {
         anim.SetBool("Died", true);
-        GetComponent<Expires>().active = true;
+        GetComponent<Expires>().enabled = true;
     }
 }

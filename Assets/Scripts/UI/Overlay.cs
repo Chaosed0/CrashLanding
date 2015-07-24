@@ -13,6 +13,7 @@ public class Overlay : MonoBehaviour {
     private float flashStartAlpha;
 
 	void Start () {
+		GetComponent<Canvas>().enabled = false;
         player.OnHealthChanged += OnHealthChanged;
         intro.OnIntroOver += OnIntroOver;
 	}
@@ -42,6 +43,7 @@ public class Overlay : MonoBehaviour {
     }
 
     void OnIntroOver() {
+		GetComponent<Canvas>().enabled = true;
         Flash(4.0f, Color.white);
     }
 }
