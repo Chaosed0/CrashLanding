@@ -19,7 +19,7 @@ public class HealthTextController : MonoBehaviour {
         originalColor = healthText.color;
     }
 
-    void onHealthChanged(int health) {
+    void onHealthChanged(int health, int change) {
         healthText.text = health.ToString();
         flashTimer = 0.0f;
     }

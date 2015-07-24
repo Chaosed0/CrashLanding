@@ -12,7 +12,7 @@ public class HealthSliderController : MonoBehaviour {
         slider.value = character.getHealth();
     }
 
-    void onHealthChanged(int health) {
+    void onHealthChanged(int health, int change) {
         slider.value = health;
     }
 }

@@ -8,6 +8,7 @@ public class PlayerInput : MonoBehaviour {
     private RigidbodyMotor rigidMotor;
     private Player player;
 
+    public Camera playerCamera;
     public bool fps = false;
 
     private const float lookSpeed = 50.0f;
@@ -18,7 +19,6 @@ public class PlayerInput : MonoBehaviour {
         player = GetComponent<Player>();
 
         lockCursor();
-        player.OnStartAcceptingInput += lockCursor;
 	}
 
 	private void Update () {
@@ -28,13 +28,13 @@ public class PlayerInput : MonoBehaviour {
         float vlook = Input.GetAxis("Mouse Y");
         bool jump = (bool)Input.GetButtonDown("Jump");
         bool dodge = (bool)Input.GetButtonDown("Dodge");
-        bool activate = (bool)Input.GetButtonDown("Use");
         bool startFire = (bool)Input.GetButtonDown("Fire1");
         bool stopFire = (bool)Input.GetButtonUp("Fire1");
 
         if (!player.isAcceptingInput()) {
             hmove = vmove = hlook = vlook = 0.0f;
-            jump = activate = startFire = stopFire = false;
+            jump = startFire = false;
+            stopFire = true;
         }
 
         if (startFire) {
@@ -52,20 +52,15 @@ public class PlayerInput : MonoBehaviour {
         }
 
         if (fps) {
-            Camera.main.transform.RotateAround(Camera.main.transform.position, Camera.main.transform.right, -vlook * lookSpeed * Time.deltaTime);
+            playerCamera.transform.RotateAround(playerCamera.transform.position, playerCamera.transform.right, -vlook * lookSpeed * Time.deltaTime);
         } else {
-            Camera.main.transform.RotateAround(transform.position, transform.right, -vlook * lookSpeed * Time.deltaTime);
+            playerCamera.transform.RotateAround(transform.position, transform.right, -vlook * lookSpeed * Time.deltaTime);
         }
 
         if (startFire) {
             player.setFiring(true);
         } else if (stopFire) {
             player.setFiring(false);
-        }
-
-        if (activate) {
-            unlockCursor();
-            player.activate();
         }
 	}
 

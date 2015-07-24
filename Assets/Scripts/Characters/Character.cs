@@ -5,7 +5,7 @@ public class Character : MonoBehaviour {
     public int maxHealth = 100;
     private int health = 100;
 
-    public delegate void HealthChanged(int health);
+    public delegate void HealthChanged(int health, int change);
     public event HealthChanged OnHealthChanged;
 
     public delegate void Died();
@@ -20,9 +20,10 @@ public class Character : MonoBehaviour {
     }
 
     public void setHealth(int health) {
+        int change = health - this.health;
         this.health = health;
         if (OnHealthChanged != null) {
-            OnHealthChanged(health);
+            OnHealthChanged(health, change);
         }
         if (this.health <= 0) {
             if (OnDied != null) {

@@ -25,7 +25,6 @@ public class AmpAfterTutorial : MonoBehaviour {
 
         fadeInTimer += Time.deltaTime;
         audioSource.volume = originalVolume + (target - originalVolume) * (1.0f - (fadeInTime - fadeInTimer) / fadeInTime);
-        Debug.Log(originalVolume);
 
         if (fadeInTimer > fadeInTime) {
             fadeIn = false;

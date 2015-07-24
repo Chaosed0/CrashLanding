@@ -18,7 +18,7 @@ public class Tutorial : MonoBehaviour {
 
     public AudioClip[] clips;
     public AudioSource source;
-    public float switchTime = 3.0f;
+    public float switchTime = 1.0f;
     public bool active = false;
 
     public BootupText bootupText;
@@ -54,6 +54,7 @@ public class Tutorial : MonoBehaviour {
                 state = TutorialState.REBOOTING;
                 PlayNextClip();
                 bootupText.StartScroll();
+                switchTime = 3.0f;
                 break;
             case TutorialState.REBOOTING:
                 state = TutorialState.HEALTH;

@@ -3,38 +3,22 @@ using System.Collections;
 
 [RequireComponent (typeof (Character))]
 public class Player : MonoBehaviour {
-    private float activateDistance = 5.0f;
-    private bool acceptingInput = true;
+    private bool acceptingInput = false;
 
-    public delegate void StartAcceptingInput();
-    public event StartAcceptingInput OnStartAcceptingInput;
-
-    public DialogueBox dialogueBox;
+    public IntroShip intro;
     public Gun gun;
 
     void Start() {
         GetComponent<Character>().OnDied += OnDied;
+        intro.OnIntroOver += startAcceptInput;
     }
 
-    public void activate() {
-        RaycastHit hitInfo;
-        bool hit = Physics.Raycast(transform.position, transform.forward, out hitInfo, activateDistance);
-        if (hit) {
-            GameObject hitObject = hitInfo.transform.gameObject;
-            NPC npc = hitObject.GetComponent<NPC>();
-            if (npc != null) {
-                npc.talk(dialogueBox);
-                dialogueBox.show();
-                acceptingInput = false;
-                dialogueBox.OnHidden += acceptInput;
-            }
-        }
+    private void startAcceptInput() {
+        acceptInput(true);
     }
 
-    private void acceptInput() {
-        acceptingInput = true;
-        OnStartAcceptingInput();
-        dialogueBox.OnHidden -= acceptInput;
+    private void acceptInput(bool accept) {
+        acceptingInput = accept;
     }
 
     public bool isAcceptingInput() {
