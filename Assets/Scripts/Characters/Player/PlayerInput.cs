@@ -10,6 +10,7 @@ public class PlayerInput : MonoBehaviour {
 
     public Camera playerCamera;
     public bool fps = false;
+    public bool invert = false;
 
     private const float lookSpeed = 50.0f;
 
@@ -17,6 +18,11 @@ public class PlayerInput : MonoBehaviour {
         motor = GetComponent<CharacterMotor>();
         rigidMotor = GetComponent<RigidbodyMotor>();
         player = GetComponent<Player>();
+
+        GameObject sharedObject = GameObject.Find("SharedLevelObject");
+        if (sharedObject) {
+            invert = sharedObject.GetComponent<SharedLevelObject>().invertMouse;
+        }
 
         lockCursor();
 	}
@@ -49,6 +55,10 @@ public class PlayerInput : MonoBehaviour {
             motor.Move(movement, hlook, jump, dodge);
         } else {
             rigidMotor.Move(movement, hlook, jump, dodge);
+        }
+
+        if (invert) {
+            vlook = -vlook;
         }
 
         if (fps) {

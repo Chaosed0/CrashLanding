@@ -7,7 +7,6 @@ using System.Collections;
 public class FallOnDeath : MonoBehaviour {
 	void Start () {
         GetComponent<Character>().OnDied += OnDied;
-        GetComponent<Expires>().enabled = false;
 	}
 
     void OnDied() {
