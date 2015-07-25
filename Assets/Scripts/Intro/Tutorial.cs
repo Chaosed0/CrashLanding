@@ -36,6 +36,9 @@ public class Tutorial : MonoBehaviour {
     public delegate void TutorialEnd();
     public event TutorialEnd OnTutorialEnd;
 
+    public delegate void EarlyTutorialEnd();
+    public event EarlyTutorialEnd OnEarlyTutorialEnd;
+
     void Start() {
         GameObject sharedLevelObject = GameObject.Find("SharedLevelObject");
         if (sharedLevelObject != null) {
@@ -106,6 +109,9 @@ public class Tutorial : MonoBehaviour {
                 shipPowerMeter.SetActive(true);
                 bootupText.EndScroll();
                 PlayNextClip();
+                if (OnEarlyTutorialEnd != null) {
+                    OnEarlyTutorialEnd();
+                }
                 break;
             case TutorialState.SHIP_POWER:
                 state = TutorialState.HOSTILES;
@@ -114,10 +120,10 @@ public class Tutorial : MonoBehaviour {
                 break;
             case TutorialState.HOSTILES:
                 state = TutorialState.INIT;
+                gameRules.enabled = true;
+                this.enabled = false;
                 if (OnTutorialEnd != null) {
                     OnTutorialEnd();
-                    gameRules.enabled = true;
-                    this.enabled = false;
                 }
                 GameObject sharedObject = GameObject.Find("SharedLevelObject");
                 if (sharedObject != null) {

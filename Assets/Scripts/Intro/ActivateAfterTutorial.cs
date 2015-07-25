@@ -4,9 +4,14 @@ using System.Collections;
 public class ActivateAfterTutorial : MonoBehaviour {
     public Tutorial tutorial;
     public GameObject[] objects;
+    public bool early;
 
     void Start() {
-        tutorial.OnTutorialEnd += OnTutorialEnd;
+        if (early) {
+            tutorial.OnEarlyTutorialEnd += OnTutorialEnd;
+        } else {
+            tutorial.OnTutorialEnd += OnTutorialEnd;
+        }
     }
 
     void OnTutorialEnd() {
