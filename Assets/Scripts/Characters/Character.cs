@@ -21,10 +21,20 @@ public class Character : MonoBehaviour {
 
     public void setHealth(int health) {
         int change = health - this.health;
-        this.health = health;
+
+        if (health <= 0) {
+            if (this.health <= 0) {
+                return;
+            }
+            this.health = 0;
+        } else {
+            this.health = health;
+        }
+
         if (OnHealthChanged != null) {
             OnHealthChanged(health, change);
         }
+
         if (this.health <= 0) {
             if (OnDied != null) {
                 OnDied();

@@ -2,11 +2,13 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof (Player))]
+[RequireComponent(typeof (Character))]
 public class PlayerInput : MonoBehaviour {
     private Transform parentTransform;
     private CharacterMotor motor;
     private RigidbodyMotor rigidMotor;
     private Player player;
+    private Character character;
 
     public Camera playerCamera;
     public bool fps = false;
@@ -18,6 +20,7 @@ public class PlayerInput : MonoBehaviour {
         motor = GetComponent<CharacterMotor>();
         rigidMotor = GetComponent<RigidbodyMotor>();
         player = GetComponent<Player>();
+        character = GetComponent<Character>();
 
         GameObject sharedObject = GameObject.Find("SharedLevelObject");
         if (sharedObject) {
@@ -38,6 +41,11 @@ public class PlayerInput : MonoBehaviour {
         bool stopFire = (bool)Input.GetButtonUp("Fire1");
 
         if (!player.isAcceptingInput()) {
+            if (character.isDead() && startFire) {
+                /* This really is the worst place for this, oh well */
+                GameObject.Find("SharedLevelObject").GetComponent<SharedLevelObject>().nextLevel = "Dungeon";
+                Application.LoadLevel("LoadingScene");
+            }
             hmove = vmove = hlook = vlook = 0.0f;
             jump = startFire = false;
             stopFire = true;

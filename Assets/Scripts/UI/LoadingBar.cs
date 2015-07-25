@@ -16,7 +16,6 @@ public class LoadingBar : MonoBehaviour {
 
 	void Update () {
         slider.value = loadAsync.progress;
-        Debug.Log(loadAsync.progress);
         if (loadAsync.progress >= 1) {
             Application.LoadLevel(shared.nextLevel);
         }

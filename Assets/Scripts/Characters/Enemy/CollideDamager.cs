@@ -7,6 +7,10 @@ public class CollideDamager : MonoBehaviour {
     public bool dieOnCollide = false;
 
     void OnCollisionEnter(Collision collision) {
+        if (!this.enabled) {
+            return;
+        }
+
         GameObject player = Util.getPlayer();
         if (collision.gameObject == player) {
             player.GetComponent<Character>().damage(damageOnCollide);

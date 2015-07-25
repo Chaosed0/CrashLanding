@@ -102,13 +102,14 @@ public class Tutorial : MonoBehaviour {
                 break;
             case TutorialState.ALL_DONE:
                 state = TutorialState.SHIP_POWER;
+                switchTime = 4.0f;
                 shipPowerMeter.SetActive(true);
                 bootupText.EndScroll();
                 PlayNextClip();
                 break;
             case TutorialState.SHIP_POWER:
                 state = TutorialState.HOSTILES;
-                switchTime = 4.0f;
+                switchTime = 3.0f;
                 PlayNextClip();
                 break;
             case TutorialState.HOSTILES:
