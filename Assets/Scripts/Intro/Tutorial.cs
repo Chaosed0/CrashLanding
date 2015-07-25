@@ -119,6 +119,7 @@ public class Tutorial : MonoBehaviour {
                     gameRules.enabled = true;
                     this.enabled = false;
                 }
+                GameObject.Find("SharedLevelObject").GetComponent<SharedLevelObject>().skipTutorial = true;
                 break;
             default:
                 break;
