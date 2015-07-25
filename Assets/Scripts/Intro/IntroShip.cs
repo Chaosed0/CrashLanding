@@ -10,6 +10,7 @@ public class IntroShip : MonoBehaviour {
     public AudioSource audioSource;
     public AudioClip explosionClip;
     public Transform ship;
+    public ParticleSystem dust;
 
     private float crashTimer = 0.0f;
     private Vector3 initialPosition;
@@ -32,6 +33,9 @@ public class IntroShip : MonoBehaviour {
             lookAtCamera.gameObject.SetActive(false);
             playerCamera.gameObject.SetActive(true);
             tutorial.enabled = true;
+            dust.Play();
+            dust.Simulate(10.0f,false,false);
+            dust.Play();
             if (OnIntroOver != null) {
                 player.velocity = new Vector3(0, 10, 0);
                 audioSource.clip = explosionClip;
