@@ -52,7 +52,7 @@ public class GameRules : MonoBehaviour {
             }
         }
 
-        int newShipPower = initialShipPower + (int)((1.0f - (maxShipPowerTime - timer) / maxShipPowerTime) * (maxShipPower - initialShipPower));
+        int newShipPower = initialShipPower + (int)((timer / maxShipPowerTime) * (maxShipPower - initialShipPower));
         if (newShipPower > shipPower && OnShipPowerChange != null) {
             OnShipPowerChange(newShipPower);
         }

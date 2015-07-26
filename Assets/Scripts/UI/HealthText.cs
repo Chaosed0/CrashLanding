@@ -2,10 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
-public class HealthTextController : MonoBehaviour {
-    public Character character;
+public class HealthText : MonoBehaviour {
     public Text healthText;
-    public Text maxHealthText;
     public Color flashOnChange = Color.yellow;
     public float flashTime = 0.5f;
 
@@ -13,13 +11,10 @@ public class HealthTextController : MonoBehaviour {
     private Color originalColor;
 
     private void Start() {
-        character.OnHealthChanged += onHealthChanged;
-        healthText.text = character.getHealth().ToString();
-        maxHealthText.text = character.maxHealth.ToString();
         originalColor = healthText.color;
     }
 
-    void onHealthChanged(int health, int change) {
+    public void OnHealthChanged(int health, int change) {
         healthText.text = health.ToString();
         flashTimer = 0.0f;
     }

@@ -21,27 +21,32 @@ public class IntroShip : MonoBehaviour {
 	void Start () {
         initialPosition = ship.rotation * new Vector3(0, 0, -200);
         ship.localPosition = initialPosition;
+	}
+
+    void OnEnable() {
         lookAtCamera.gameObject.SetActive(true);
         playerCamera.gameObject.SetActive(false);
-	}
+        audioSource.Play();
+    }
 
 	void Update () {
         crashTimer += Time.deltaTime;
 
         if (crashTimer >= crashTime * 0.95) {
             ship.localPosition = new Vector3(0,0,0);
-            lookAtCamera.gameObject.SetActive(false);
-            playerCamera.gameObject.SetActive(true);
             tutorial.enabled = true;
+
+            dust.Simulate(20.0f,false,true);
             dust.Play();
-            dust.Simulate(10.0f,false,false);
-            dust.Play();
+
+            player.velocity = new Vector3(0, 10, 0);
+            audioSource.clip = explosionClip;
+            audioSource.Play();
+
             if (OnIntroOver != null) {
-                player.velocity = new Vector3(0, 10, 0);
-                audioSource.clip = explosionClip;
-                audioSource.Play();
                 OnIntroOver();
             }
+
             enabled = false;
         } else {
             float fraction = (crashTime - crashTimer) / crashTime;
@@ -49,4 +54,9 @@ public class IntroShip : MonoBehaviour {
             lookAtCamera.transform.LookAt(ship);
         }
 	}
+
+    void OnDisable() {
+        lookAtCamera.gameObject.SetActive(false);
+        playerCamera.gameObject.SetActive(true);
+    }
 }

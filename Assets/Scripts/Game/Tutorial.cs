@@ -23,8 +23,8 @@ public class Tutorial : MonoBehaviour {
 
     public BootupText bootupText;
     public Text tutorialText;
-    public GameObject healthText;
-    public GameObject shipPowerMeter;
+    public HealthText healthText;
+    public ShipPowerText shipPowerText;
 
     public GameRules gameRules;
 
@@ -44,8 +44,8 @@ public class Tutorial : MonoBehaviour {
         if (sharedLevelObject != null) {
             bool skipTutorial = sharedLevelObject.GetComponent<SharedLevelObject>().skipTutorial;
             if (skipTutorial) {
-                healthText.SetActive(true);
-                shipPowerMeter.SetActive(true);
+                healthText.gameObject.SetActive(true);
+                shipPowerText.gameObject.SetActive(true);
                 state = TutorialState.SHIP_POWER;
             }
         }
@@ -74,7 +74,7 @@ public class Tutorial : MonoBehaviour {
             case TutorialState.REBOOTING:
                 state = TutorialState.HEALTH;
                 PlayNextClip();
-                healthText.SetActive(true);
+                healthText.gameObject.SetActive(true);
                 break;
             case TutorialState.HEALTH:
                 state = TutorialState.MOVEMENT;
@@ -106,7 +106,7 @@ public class Tutorial : MonoBehaviour {
             case TutorialState.ALL_DONE:
                 state = TutorialState.SHIP_POWER;
                 switchTime = 4.0f;
-                shipPowerMeter.SetActive(true);
+                shipPowerText.gameObject.SetActive(true);
                 bootupText.EndScroll();
                 PlayNextClip();
                 if (OnEarlyTutorialEnd != null) {

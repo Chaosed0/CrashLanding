@@ -3,16 +3,9 @@ using UnityEngine.UI;
 using System.Collections;
 
 public class ShipPowerText : MonoBehaviour {
-    public GameRules gameRules;
+    public Text shipPowerText;
 
-    private Text text;
-
-	void Start () {
-        text = GetComponent<Text>();
-        gameRules.OnShipPowerChange += OnShipPowerChange;
-	}
-
-    private void OnShipPowerChange(int power) {
-        text.text = power + "%";
+    public void OnShipPowerChange(int power) {
+        shipPowerText.text = power + "%";
     }
 }

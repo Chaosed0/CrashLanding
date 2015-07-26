@@ -5,6 +5,7 @@ using System.Collections;
 public class Overlay : MonoBehaviour {
     public Character player;
     public IntroShip intro;
+    public GameRules gameRules;
     public Image flashImage;
 
     private float flashTime = 0.0f;
@@ -16,6 +17,7 @@ public class Overlay : MonoBehaviour {
 		GetComponent<Canvas>().enabled = false;
         player.OnHealthChanged += OnHealthChanged;
         intro.OnIntroOver += OnIntroOver;
+        gameRules.OnWin += OnWin;
 	}
 
 	void Update () {
@@ -45,5 +47,9 @@ public class Overlay : MonoBehaviour {
     void OnIntroOver() {
 		GetComponent<Canvas>().enabled = true;
         Flash(4.0f, Color.white);
+    }
+
+    void OnWin() {
+		GetComponent<Canvas>().enabled = false;
     }
 }

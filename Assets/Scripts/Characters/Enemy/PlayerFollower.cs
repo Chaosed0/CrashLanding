@@ -18,7 +18,7 @@ public class PlayerFollower : MonoBehaviour {
     private RigidbodyMotor rigidMotor;
 
     void Start () {
-        repathTimer = repathTime;
+        repathTimer = repathTime - 0.1f;
         waypointIdx = -1;
 
         seeker = GetComponent<Seeker>();

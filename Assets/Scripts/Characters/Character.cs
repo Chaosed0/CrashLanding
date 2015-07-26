@@ -13,6 +13,9 @@ public class Character : MonoBehaviour {
 
     void Start() {
         health = maxHealth;
+        if (OnHealthChanged != null) {
+            OnHealthChanged(health, 0);
+        }
     }
 
     public int getHealth() {
