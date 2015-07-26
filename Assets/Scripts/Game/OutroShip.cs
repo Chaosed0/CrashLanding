@@ -5,6 +5,7 @@ public class OutroShip : MonoBehaviour {
     public PathNode[] path;
     public Transform ship;
     public GameRules gameRules;
+    public AudioSource audioSource;
 
     public Camera lookAtCamera;
     public Camera playerCamera;
@@ -26,6 +27,10 @@ public class OutroShip : MonoBehaviour {
     void OnEnable() {
         rot = ship.rotation;
         nextRot = Quaternion.LookRotation(path[2].transform.position - path[1].transform.position);
+        if (path[0].clip != null) {
+            audioSource.clip = path[0].clip;
+            audioSource.Play();
+        }
         lookAtCamera.gameObject.SetActive(true);
         playerCamera.gameObject.SetActive(false);
     }
@@ -47,8 +52,14 @@ public class OutroShip : MonoBehaviour {
                 timer = 0.0f;
             }
         }
+
         if (!driving) {
             if (timer >= path[target].timeToPause) {
+                if (path[target].clip != null) {
+                    audioSource.clip = path[target].clip;
+                    audioSource.Play();
+                }
+
                 driving = true;
                 timer = 0.0f;
                 target++;
@@ -61,6 +72,7 @@ public class OutroShip : MonoBehaviour {
                         nextRot = Quaternion.LookRotation(path[target+1].transform.position - path[target+1].transform.position);
                     }
                 }
+
             }
         }
 	}

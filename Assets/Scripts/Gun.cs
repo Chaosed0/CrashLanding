@@ -14,6 +14,7 @@ public class Gun : MonoBehaviour {
     public Bullet bulletPrefab = null;
     public Marker markerPrefab = null;
 
+    public AudioClip[] gunClips;
     public AudioSource gunAudio;
 
     private float recoilTimer = 0.1f;
@@ -32,6 +33,7 @@ public class Gun : MonoBehaviour {
         
         if (firing && cooldownTimer >= cooldown) {
             Fire();
+            gunAudio.clip = gunClips[Random.Range(0, gunClips.Length-1)];
             gunAudio.Play();
         }
     }
