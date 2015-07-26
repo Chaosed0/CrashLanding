@@ -16,6 +16,7 @@ public class PlayerInput : MonoBehaviour {
     public bool invert = false;
 
     private const float lookSpeed = 50.0f;
+    private float yaw = 0.0f;
 
 	private void Start () {
         motor = GetComponent<CharacterMotor>();
@@ -71,11 +72,17 @@ public class PlayerInput : MonoBehaviour {
             vlook = -vlook;
         }
 
+        float newYaw = Mathf.Clamp(yaw + vlook * lookSpeed * Time.deltaTime, -80, 80);
+        float change = newYaw - yaw;
+
         if (fps) {
-            playerCamera.transform.RotateAround(playerCamera.transform.position, playerCamera.transform.right, -vlook * lookSpeed * Time.deltaTime);
+            playerCamera.transform.RotateAround(playerCamera.transform.position, playerCamera.transform.right, -change);
         } else {
-            playerCamera.transform.RotateAround(transform.position, transform.right, -vlook * lookSpeed * Time.deltaTime);
+            playerCamera.transform.RotateAround(transform.position, transform.right, -change);
         }
+
+        yaw = newYaw;
+        Debug.Log(yaw);
 
         if (startFire) {
             player.setFiring(true);
