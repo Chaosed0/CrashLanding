@@ -5,6 +5,7 @@ using Pathfinding;
 public class PlayerFollower : MonoBehaviour {
     public float repathTime = 1.0f;
     public float waypointCloseDistance = 1.0f;
+    public float heightTolerance = 2.5f;
 
     private float repathTimer = 1.0f;
 
@@ -55,8 +56,11 @@ public class PlayerFollower : MonoBehaviour {
         if (currentPath != null) { 
             if (waypointIdx < currentPath.vectorPath.Count) {
                 target = currentPath.vectorPath[waypointIdx];
+                Vector3 flatTarget = Vector3.Scale(target, new Vector3(1,0,1));
+                Vector3 flatPos = Vector3.Scale(transform.position, new Vector3(1,0,1));
 
-                if (Vector3.Distance(transform.position, target) < waypointCloseDistance) {
+                if (Vector3.Distance(flatPos, flatTarget) < waypointCloseDistance &&
+                        Mathf.Abs(transform.position.y - target.y) < heightTolerance) {
                     waypointIdx++;
                 }
             } else {

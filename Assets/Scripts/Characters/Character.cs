@@ -5,6 +5,8 @@ public class Character : MonoBehaviour {
     public int maxHealth = 100;
     private int health = 100;
 
+    public bool invincible = false;
+
     public delegate void HealthChanged(int health, int change);
     public event HealthChanged OnHealthChanged;
 
@@ -24,6 +26,10 @@ public class Character : MonoBehaviour {
 
     public void setHealth(int health) {
         int change = health - this.health;
+
+        if (invincible && change < 0) {
+            return;
+        }
 
         if (health <= 0) {
             if (this.health <= 0) {

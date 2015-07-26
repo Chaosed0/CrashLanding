@@ -44,6 +44,9 @@ public class Tutorial : MonoBehaviour {
         if (sharedLevelObject != null) {
             bool skipTutorial = sharedLevelObject.GetComponent<SharedLevelObject>().skipTutorial;
             if (skipTutorial) {
+                if (OnEarlyTutorialEnd != null) {
+                    OnEarlyTutorialEnd();
+                }
                 healthText.gameObject.SetActive(true);
                 shipPowerText.gameObject.SetActive(true);
                 state = TutorialState.SHIP_POWER;
@@ -99,6 +102,9 @@ public class Tutorial : MonoBehaviour {
                 break;
             case TutorialState.FIRE:
                 state = TutorialState.ALL_DONE;
+                if (OnEarlyTutorialEnd != null) {
+                    OnEarlyTutorialEnd();
+                }
                 PlayNextClip();
                 tutorialText.text = "";
                 doSwitch = true;
@@ -109,9 +115,6 @@ public class Tutorial : MonoBehaviour {
                 shipPowerText.gameObject.SetActive(true);
                 bootupText.EndScroll();
                 PlayNextClip();
-                if (OnEarlyTutorialEnd != null) {
-                    OnEarlyTutorialEnd();
-                }
                 break;
             case TutorialState.SHIP_POWER:
                 state = TutorialState.HOSTILES;

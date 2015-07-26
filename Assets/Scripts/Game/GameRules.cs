@@ -7,8 +7,11 @@ public class GameRules : MonoBehaviour {
     public float maxShipPowerTime = 180.0f;
     public ShipTrigger ship;
 
-    public float startHorses = 60.0f;
-    public float startSkeletons = 120.0f;
+    public float startHorses = 30.0f;
+    public float startSkeletons = 60.0f;
+    public float rampUpTime = 120.0f;
+    public float rampSkeletonTimer = 4.0f;
+    public float rampHorseTimer = 3.0f;
 
     public EnemySpawner[] horseSpawners;
     public EnemySpawner[] skeletonSpawners;
@@ -16,6 +19,7 @@ public class GameRules : MonoBehaviour {
     private float timer = 0.0f;
     private bool enabledHorses = false;
     private bool enabledSkeletons = false;
+    private bool rampedUp = false;
     private bool won = false;
     private int shipPower;
 
@@ -50,6 +54,15 @@ public class GameRules : MonoBehaviour {
             for (int i = 0; i < skeletonSpawners.Length; i++) {
                 skeletonSpawners[i].gameObject.SetActive(true);
             }
+        }
+        if (!rampedUp && timer >= rampUpTime) {
+            for (int i = 0; i < skeletonSpawners.Length; i++) {
+                skeletonSpawners[i].GetComponent<Interval>().intervalTime = rampSkeletonTimer;
+            }
+            for (int i = 0; i < horseSpawners.Length; i++) {
+                horseSpawners[i].GetComponent<Interval>().intervalTime = rampHorseTimer;
+            }
+            rampedUp = true;
         }
 
         int newShipPower = initialShipPower + (int)((timer / maxShipPowerTime) * (maxShipPower - initialShipPower));

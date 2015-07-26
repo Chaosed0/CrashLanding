@@ -106,14 +106,15 @@ public class RigidbodyMotor : MonoBehaviour {
         }
 
         if (dodge && (isGrounded || haveDoubleJump) && !isDodging) {
-            isDodging = true;
             dodgeDir = Vector3.Scale(movement, new Vector3(1,0,1));
-            hSpeed = dodgeSpeed;
-            
-            if (!isGrounded && haveDoubleJump) {
-                haveDoubleJump = false;
+            if (dodgeDir.magnitude > 0.01f) {
+                isDodging = true;
+                hSpeed = dodgeSpeed;
+                OnDodge(!isGrounded);
+                if (!isGrounded && haveDoubleJump) {
+                    haveDoubleJump = false;
+                }
             }
-            OnDodge(!isGrounded);
         }
 
         if (isDodging) {

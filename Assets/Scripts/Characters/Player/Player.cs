@@ -4,6 +4,7 @@ using System.Collections;
 [RequireComponent (typeof (Character))]
 public class Player : MonoBehaviour {
     private bool acceptingInput = false;
+    private Character character;
 
     public IntroShip intro;
     public GameRules gameRules;
@@ -13,6 +14,7 @@ public class Player : MonoBehaviour {
         GetComponent<Character>().OnDied += OnDied;
         intro.OnIntroOver += startAcceptInput;
         gameRules.OnWin += winGame;
+        character = GetComponent<Character>();
     }
 
     private void startAcceptInput() {
@@ -21,7 +23,8 @@ public class Player : MonoBehaviour {
 
     private void winGame() {
         acceptInput(false);
-        gun.gameObject.SetActive(true);
+        gun.gameObject.SetActive(false);
+        character.invincible = true;
     }
 
     private void acceptInput(bool accept) {
