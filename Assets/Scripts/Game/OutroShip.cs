@@ -16,6 +16,9 @@ public class OutroShip : MonoBehaviour {
     private Quaternion rot;
     private Quaternion nextRot;
 
+    public delegate void OutroEnd();
+    public event OutroEnd OnOutroEnd;
+
     void Awake() {
         gameRules.OnWin += startOutro;
     }
@@ -65,6 +68,9 @@ public class OutroShip : MonoBehaviour {
                 target++;
                 if (target >= path.Length) {
                     target = 0;
+                    if (OnOutroEnd != null) {
+                        OnOutroEnd();
+                    }
                     this.enabled = false;
                 } else {
                     rot = nextRot;

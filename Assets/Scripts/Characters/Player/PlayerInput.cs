@@ -11,6 +11,7 @@ public class PlayerInput : MonoBehaviour {
     private Character character;
 
     public Camera playerCamera;
+    public OutroShip outro;
     public bool fps = false;
     public bool invert = false;
 
@@ -21,6 +22,7 @@ public class PlayerInput : MonoBehaviour {
         rigidMotor = GetComponent<RigidbodyMotor>();
         player = GetComponent<Player>();
         character = GetComponent<Character>();
+        outro.OnOutroEnd += unlockCursor;
 
         GameObject sharedObject = GameObject.Find("SharedLevelObject");
         if (sharedObject) {
