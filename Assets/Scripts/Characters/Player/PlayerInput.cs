@@ -82,7 +82,6 @@ public class PlayerInput : MonoBehaviour {
         }
 
         yaw = newYaw;
-        Debug.Log(yaw);
 
         if (startFire) {
             player.setFiring(true);
