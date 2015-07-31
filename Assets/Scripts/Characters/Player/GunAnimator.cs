@@ -26,7 +26,7 @@ public class GunAnimator : MonoBehaviour {
     private Vector3 lastBobPos;
     private Quaternion lastBobRot;
 
-    private Vector3 neutralPosition = new Vector3(0,0,0);
+    private Vector3 neutralPosition = Vector3.zero;
 
     private delegate float EasingFunc(float t);
 
@@ -45,7 +45,6 @@ public class GunAnimator : MonoBehaviour {
 	}
 
 	void Update () {
-        //Debug.Log(canBob + " " + bobbing + " " + returnTimer);
         if (returnTimer < returnTime) {
             returnTimer += Time.deltaTime;
             float fraction = returnTimer / returnTime;
@@ -123,14 +122,29 @@ public class GunAnimator : MonoBehaviour {
     private void EnableGunBobIfGrounded(bool inAir) {
         if (!inAir) {
             canBob = true;
+            resetBob();
+            setNeutral(Vector3.zero);
         }
     }
 
     private void EnableGunBob() {
         canBob = true;
+        resetBob();
+        setNeutral(Vector3.zero);
     }
 
     private void DisableGunBob(bool inAir) {
         canBob = false;
+        if (!inAir) {
+            setNeutral(new Vector3(0.0f, -0.05f, -0.1f));
+        }
+    }
+
+    private void setNeutral(Vector3 neutral) {
+        returnFromPos = transform.localPosition;
+        returnFromRot = transform.localRotation;
+        neutralPosition = neutral;
+        returnTimer = 0.0f;
+        returnTime = 0.1f;
     }
 }
