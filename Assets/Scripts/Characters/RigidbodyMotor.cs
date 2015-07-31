@@ -21,6 +21,13 @@ public class RigidbodyMotor : MonoBehaviour {
     private Vector3 dodgeDir = new Vector3(0,0,0);
     private bool haveDoubleJump = true;
     private bool isGrounded = false;
+    private bool moving = false;
+
+    public delegate void StartMove();
+    public event StartMove OnStartMove;
+
+    public delegate void StopMove();
+    public event StopMove OnStopMove;
 
     public delegate void Dodge(bool inAir);
     public event Dodge OnDodge;
@@ -75,12 +82,24 @@ public class RigidbodyMotor : MonoBehaviour {
             return;
         }
 
+        bool moving = movement.magnitude >= 0.01f;
+        if (moving != this.moving) {
+            if (moving && OnStartMove != null) {
+                OnStartMove();
+            }
+            if (!moving && OnStopMove != null) {
+                OnStopMove();
+            }
+            this.moving = moving;
+        }
+
         Vector3 velocity = new Vector3(0,0,0);
         float vSpeed = 0.0f;
 
         RaycastHit hitInfo;
         bool isGrounded = Physics.Raycast(transform.position + new Vector3(0.0f,distToGround,0.0f),
                 -Vector3.up, out hitInfo, distToGround + 0.3f);
+
         if (isGrounded && !this.isGrounded && OnLand != null) {
             OnLand();
         }

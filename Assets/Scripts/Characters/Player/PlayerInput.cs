@@ -66,8 +66,6 @@ public class PlayerInput : MonoBehaviour {
             rigidMotor.Move(movement, hlook, jump, dodge);
         }
 
-        player.setMoving(movement.magnitude > 0);
-
         if (invert) {
             vlook = -vlook;
         }
