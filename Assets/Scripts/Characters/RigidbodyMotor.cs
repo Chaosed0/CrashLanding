@@ -25,7 +25,7 @@ public class RigidbodyMotor : MonoBehaviour {
     public delegate void Dodge(bool inAir);
     public event Dodge OnDodge;
 
-    public delegate void StopDodge();
+    public delegate void StopDodge(bool inAir);
     public event StopDodge OnStopDodge;
 
     public delegate void Jump(bool inAir);
@@ -135,7 +135,7 @@ public class RigidbodyMotor : MonoBehaviour {
             if (hSpeed <= 1.0f) {
                 isDodging = false;
                 if (OnStopDodge != null) {
-                    OnStopDodge();
+                    OnStopDodge(!isGrounded);
                 }
             }
             if (anim != null) {

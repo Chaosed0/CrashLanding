@@ -43,6 +43,11 @@ public class Gun : MonoBehaviour {
             transform.localPosition = Vector3.forward * recoil.x * fraction + Vector3.up * recoil.y * fraction + Vector3.right * recoil.z * fraction;
             transform.localRotation = Quaternion.Slerp(Quaternion.identity, Quaternion.Euler(recoilRot.x, recoilRot.y, recoilRot.z), fraction);
         } else if (!firing && bobbing) {
+            if (bobTimer == 0.0f && startBob) {
+                lastBobPos = transform.localPosition;
+                lastBobRot = transform.localRotation;
+            }
+
             bobTimer += Time.deltaTime;
             if (bobTimer >= bobTime) {
                 bobNode = (bobNode+1)%bobPath.Length;
@@ -53,11 +58,11 @@ public class Gun : MonoBehaviour {
             Vector3 prevPos;
             Quaternion prevRot;
             if (startBob) {
-                prevPos = transform.parent.position;
-                prevRot = transform.parent.rotation;
+                prevPos = lastBobPos;
+                prevRot = lastBobRot;
             } else {
-                prevPos = bobPath[(bobNode-1+bobPath.Length)%bobPath.Length].position;
-                prevRot = bobPath[(bobNode-1+bobPath.Length)%bobPath.Length].rotation;
+                prevPos = bobPath[(bobNode-1+bobPath.Length)%bobPath.Length].localPosition;
+                prevRot = bobPath[(bobNode-1+bobPath.Length)%bobPath.Length].localRotation;
             }
 
             EasingFunc easingFunc;
@@ -68,8 +73,8 @@ public class Gun : MonoBehaviour {
             }
 
             float fraction = bobTimer / bobTime;
-            transform.position = Vector3.Lerp(prevPos, bobPath[bobNode].position, easingFunc(fraction));
-            transform.rotation = Quaternion.Slerp(prevRot, bobPath[bobNode].rotation, easingFunc(fraction));
+            transform.localPosition = Vector3.Lerp(prevPos, bobPath[bobNode].localPosition, easingFunc(fraction));
+            transform.localRotation = Quaternion.Slerp(prevRot, bobPath[bobNode].localRotation, easingFunc(fraction));
         }
         
         if (firing && cooldownTimer >= cooldown) {
@@ -91,6 +96,7 @@ public class Gun : MonoBehaviour {
     public void setBobbing(bool bobbing) {
         if (!this.bobbing && bobbing) {
             resetBob();
+        } else if (!bobbing) {
         }
         this.bobbing = bobbing;
     }

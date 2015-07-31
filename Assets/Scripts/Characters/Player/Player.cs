@@ -9,7 +9,6 @@ public class Player : MonoBehaviour {
 
     private Character character;
     private RigidbodyMotor motor;
-    private bool canBob = true;
     private bool moving = false;
 
     void Start() {
@@ -20,7 +19,7 @@ public class Player : MonoBehaviour {
         motor.OnJump += DisableGunBob;
         motor.OnDodge += DisableGunBob;
         motor.OnLand += EnableGunBob;
-        motor.OnStopDodge += EnableGunBob;
+        motor.OnStopDodge += EnableGunBobIfGrounded;
     }
 
     public void winGame() {
@@ -43,21 +42,24 @@ public class Player : MonoBehaviour {
 
     public void setMoving(bool moving) {
         this.moving = moving;
-        if (canBob) {
-            gun.setBobbing(moving);
+        gun.setBobbing(moving);
+    }
+
+    private void EnableGunBobIfGrounded(bool inAir) {
+        if (!inAir) {
+            EnableGunBob();
         }
     }
 
     private void EnableGunBob() {
+        gun.pullBack(false);
         if (moving) {
             gun.setBobbing(true);
-            canBob = true;
         }
     }
 
     private void DisableGunBob(bool inAir) {
-        gun.setBobbing(false);
-        canBob = false;
+        gun.pullBack(true);
     }
 
     private void OnDied() {
