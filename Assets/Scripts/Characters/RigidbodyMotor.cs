@@ -20,12 +20,19 @@ public class RigidbodyMotor : MonoBehaviour {
     private float hSpeed = 0.0f;
     private Vector3 dodgeDir = new Vector3(0,0,0);
     private bool haveDoubleJump = true;
+    private bool isGrounded = false;
 
     public delegate void Dodge(bool inAir);
     public event Dodge OnDodge;
 
+    public delegate void StopDodge();
+    public event StopDodge OnStopDodge;
+
     public delegate void Jump(bool inAir);
     public event Jump OnJump;
+
+    public delegate void Land();
+    public event Land OnLand;
 
 	private void Start() {
         body = GetComponent<Rigidbody>();
@@ -73,7 +80,11 @@ public class RigidbodyMotor : MonoBehaviour {
 
         RaycastHit hitInfo;
         bool isGrounded = Physics.Raycast(transform.position + new Vector3(0.0f,distToGround,0.0f),
-                -Vector3.up, out hitInfo, distToGround + 0.1f);
+                -Vector3.up, out hitInfo, distToGround + 0.3f);
+        if (isGrounded && !this.isGrounded && OnLand != null) {
+            OnLand();
+        }
+        this.isGrounded = isGrounded;
 
         if (isGrounded && canDoubleJump && !haveDoubleJump) {
             haveDoubleJump = true;
@@ -123,11 +134,16 @@ public class RigidbodyMotor : MonoBehaviour {
             hSpeed -= friction * Time.deltaTime;
             if (hSpeed <= 1.0f) {
                 isDodging = false;
+                if (OnStopDodge != null) {
+                    OnStopDodge();
+                }
             }
             if (anim != null) {
                 anim.SetFloat("dodgeSpeed", dodgeDir.magnitude);
             }
-        } else {
+        }
+
+        if (!isDodging) {
             if (anim != null) {
                 anim.SetFloat("dodgeSpeed", 0.0f);
             }

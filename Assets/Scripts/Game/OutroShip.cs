@@ -47,8 +47,8 @@ public class OutroShip : MonoBehaviour {
             Vector3 n2 = path[target].transform.position;
             float driveTime = path[target].timeToReach;
             float fraction = timer / driveTime;
-            ship.position = Vector3.Lerp(n1, n2, easeInOutQuad(fraction));
-            ship.rotation = Quaternion.Slerp(rot, nextRot, easeInOutQuad(fraction));
+            ship.position = Vector3.Lerp(n1, n2, Util.easeInOutQuad(fraction));
+            ship.rotation = Quaternion.Slerp(rot, nextRot, Util.easeInOutQuad(fraction));
             
             if (timer >= driveTime) {
                 driving = false;
@@ -68,6 +68,8 @@ public class OutroShip : MonoBehaviour {
                 target++;
                 if (target >= path.Length) {
                     target = 0;
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
                     if (OnOutroEnd != null) {
                         OnOutroEnd();
                     }
@@ -82,10 +84,4 @@ public class OutroShip : MonoBehaviour {
             }
         }
 	}
-
-
-    float easeInOutQuad(float t) {
-        if (t < 0.5) return 2*t*t;
-        return -1+(4-2*t)*t;
-    }
 }

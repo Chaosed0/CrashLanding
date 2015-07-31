@@ -2,32 +2,34 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent (typeof (Character))]
+[RequireComponent (typeof (RigidbodyMotor))]
 public class Player : MonoBehaviour {
-    private bool acceptingInput = false;
-    private Character character;
-
-    public IntroShip intro;
-    public GameRules gameRules;
+    public bool acceptingInput = false;
     public Gun gun;
+
+    private Character character;
+    private RigidbodyMotor motor;
+    private bool canBob = true;
+    private bool moving = false;
 
     void Start() {
         GetComponent<Character>().OnDied += OnDied;
-        intro.OnIntroOver += startAcceptInput;
-        gameRules.OnWin += winGame;
         character = GetComponent<Character>();
+        motor = GetComponent<RigidbodyMotor>();
+
+        motor.OnJump += DisableGunBob;
+        motor.OnDodge += DisableGunBob;
+        motor.OnLand += EnableGunBob;
+        motor.OnStopDodge += EnableGunBob;
     }
 
-    private void startAcceptInput() {
-        acceptInput(true);
-    }
-
-    private void winGame() {
-        acceptInput(false);
+    public void winGame() {
+        setAcceptInput(false);
         gun.gameObject.SetActive(false);
         character.invincible = true;
     }
 
-    private void acceptInput(bool accept) {
+    public void setAcceptInput(bool accept) {
         acceptingInput = accept;
     }
 
@@ -37,6 +39,25 @@ public class Player : MonoBehaviour {
 
     public void setFiring(bool firing) {
         gun.setFiring(firing);
+    }
+
+    public void setMoving(bool moving) {
+        this.moving = moving;
+        if (canBob) {
+            gun.setBobbing(moving);
+        }
+    }
+
+    private void EnableGunBob() {
+        if (moving) {
+            gun.setBobbing(true);
+            canBob = true;
+        }
+    }
+
+    private void DisableGunBob(bool inAir) {
+        gun.setBobbing(false);
+        canBob = false;
     }
 
     private void OnDied() {

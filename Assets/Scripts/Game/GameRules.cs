@@ -6,6 +6,7 @@ public class GameRules : MonoBehaviour {
     public int maxShipPower = 100;
     public float maxShipPowerTime = 180.0f;
     public ShipTrigger ship;
+    public Player player;
 
     public float startHorses = 30.0f;
     public float startSkeletons = 60.0f;
@@ -80,6 +81,7 @@ public class GameRules : MonoBehaviour {
         if (!won && OnWin != null) {
             OnWin();
             won = false;
+            player.winGame();
         }
     }
 }

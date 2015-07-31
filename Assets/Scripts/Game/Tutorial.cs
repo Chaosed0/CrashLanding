@@ -18,7 +18,7 @@ public class Tutorial : MonoBehaviour {
     private delegate bool CheckSwitch();
 
     public AudioClip[] clips;
-    public AudioSource source;
+    public PlayerAudio playerAudio;
     public float switchTime = 1.0f;
 
     public BootupText bootupText;
@@ -155,7 +155,6 @@ public class Tutorial : MonoBehaviour {
     }
 
     void PlayNextClip() {
-        source.clip = clips[(int)(state)-1];
-        source.Play();
+        playerAudio.PlaySound(clips[(int)(state)-1], false);
     }
 }

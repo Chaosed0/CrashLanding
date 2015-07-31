@@ -2,24 +2,37 @@
 using System.Collections;
 
 public class Gun : MonoBehaviour {
-    public Transform recoilReturn;
     public Transform barrelPoint;
     public int damage = 100;
     public float bulletSpread = 5.0f;
-    public Vector3 recoil = new Vector3(-0.1f, 0.0f, 0.0f);
-    public Vector3 recoilRot = new Vector3(1.0f, 0.0f, 0.0f);
+    public Vector3 recoil = new Vector3(-0.5f, 0.0f, 0.0f);
+    public Vector3 recoilRot = new Vector3(2.0f, 0.0f, 0.0f);
+
     public float recoilTime = 0.1f;
+    public float bobTime = 0.5f;
     public float cooldown = 0.1f;
     public float sphereCastSize = 0.25f;
+
     public Bullet bulletPrefab = null;
     public Marker markerPrefab = null;
 
-    public AudioClip[] gunClips;
-    public AudioSource gunAudio;
+    public Transform[] bobPath;
 
     private float recoilTimer = 0.1f;
+    private float bobTimer = 0.0f;
     private float cooldownTimer = 0.0f;
+    private int bobNode = 0;
     private bool firing = false;
+
+    private bool bobbing = false;
+    private bool startBob = true;
+    private Vector3 lastBobPos;
+    private Quaternion lastBobRot;
+
+    public delegate void FireDelegate();
+    public event FireDelegate OnFire;
+
+    private delegate float EasingFunc(float t);
 
     void Update() {
         cooldownTimer += Time.deltaTime;
@@ -27,22 +40,67 @@ public class Gun : MonoBehaviour {
         if (recoilTimer < recoilTime) {
             recoilTimer += Time.deltaTime;
             float fraction = (recoilTime - recoilTimer) / recoilTime;
-            transform.position = recoilReturn.position + recoilReturn.forward * recoil.x * fraction + recoilReturn.up * recoil.y * fraction + recoilReturn.right * recoil.z * fraction;
-            transform.rotation = Quaternion.Slerp(recoilReturn.rotation, recoilReturn.rotation * Quaternion.Euler(recoilRot.x, recoilRot.y, recoilRot.z), fraction);
+            transform.localPosition = Vector3.forward * recoil.x * fraction + Vector3.up * recoil.y * fraction + Vector3.right * recoil.z * fraction;
+            transform.localRotation = Quaternion.Slerp(Quaternion.identity, Quaternion.Euler(recoilRot.x, recoilRot.y, recoilRot.z), fraction);
+        } else if (!firing && bobbing) {
+            bobTimer += Time.deltaTime;
+            if (bobTimer >= bobTime) {
+                bobNode = (bobNode+1)%bobPath.Length;
+                startBob = false;
+                bobTimer = 0.0f;
+            }
+
+            Vector3 prevPos;
+            Quaternion prevRot;
+            if (startBob) {
+                prevPos = transform.parent.position;
+                prevRot = transform.parent.rotation;
+            } else {
+                prevPos = bobPath[(bobNode-1+bobPath.Length)%bobPath.Length].position;
+                prevRot = bobPath[(bobNode-1+bobPath.Length)%bobPath.Length].rotation;
+            }
+
+            EasingFunc easingFunc;
+            if (bobNode % 2 == 0) {
+                easingFunc = Util.easeOutQuad;
+            } else {
+                easingFunc = Util.easeInQuad;
+            }
+
+            float fraction = bobTimer / bobTime;
+            transform.position = Vector3.Lerp(prevPos, bobPath[bobNode].position, easingFunc(fraction));
+            transform.rotation = Quaternion.Slerp(prevRot, bobPath[bobNode].rotation, easingFunc(fraction));
         }
         
         if (firing && cooldownTimer >= cooldown) {
             Fire();
-            gunAudio.clip = gunClips[Random.Range(0, gunClips.Length-1)];
-            gunAudio.Play();
+            resetBob();
         }
+    }
+
+    private void resetBob() {
+        bobTimer = 0.0f;
+        bobNode = 0;
+        startBob = true;
     }
 
     public void setFiring(bool firing) {
         this.firing = firing;
     }
+    
+    public void setBobbing(bool bobbing) {
+        if (!this.bobbing && bobbing) {
+            resetBob();
+        }
+        this.bobbing = bobbing;
+    }
 
     public void Fire() {
+        /* Fire event */
+        if (OnFire != null) {
+            OnFire();
+        }
+
         /* Spawn the bullet */
         Quaternion bulletRot = randomBulletRot(Camera.main.transform);
         Instantiate(bulletPrefab, barrelPoint.position, bulletRot);

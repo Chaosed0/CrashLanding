@@ -3,7 +3,7 @@ using System.Collections;
 
 public class IntroShip : MonoBehaviour {
     public float crashTime = 3.0f;
-    public Rigidbody player; 
+    public Player player; 
     public Camera lookAtCamera;
     public Camera playerCamera;
     public Tutorial tutorial;
@@ -39,7 +39,8 @@ public class IntroShip : MonoBehaviour {
             dust.Simulate(20.0f,false,true);
             dust.Play();
 
-            player.velocity = new Vector3(0, 10, 0);
+            player.GetComponent<Rigidbody>().velocity = new Vector3(0, 10, 0);
+            player.setAcceptInput(true);
             audioSource.clip = explosionClip;
             audioSource.Play();
 
