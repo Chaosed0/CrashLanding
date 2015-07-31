@@ -3,14 +3,16 @@ using System.Collections;
 
 [RequireComponent (typeof (Gun))]
 public class GunAnimator : MonoBehaviour {
-    public Vector3 recoil = new Vector3(-0.5f, 0.0f, 0.0f);
-    public Vector3 recoilRot = new Vector3(2.0f, 0.0f, 0.0f);
+    public RigidbodyMotor motor;
+
+    public Transform recoilPoint;
     public float recoilTime = 0.1f;
 
-    public float bobTime = 0.5f;
     public Transform[] bobPath;
+    public float bobTime = 0.2f;
 
-    public RigidbodyMotor motor;
+    public Transform pullBackPoint;
+    public float pullBackTime = 0.1f;
 
     private float returnTimer = 0.1f;
     private float returnTime = 0.1f;
@@ -27,6 +29,7 @@ public class GunAnimator : MonoBehaviour {
     private Quaternion lastBobRot;
 
     private Vector3 neutralPosition = Vector3.zero;
+    private Quaternion neutralRotation = Quaternion.identity;
 
     private delegate float EasingFunc(float t);
 
@@ -49,7 +52,7 @@ public class GunAnimator : MonoBehaviour {
             returnTimer += Time.deltaTime;
             float fraction = returnTimer / returnTime;
             transform.localPosition = Vector3.Lerp(returnFromPos, neutralPosition, fraction);
-            transform.localRotation = Quaternion.Slerp(returnFromRot, Quaternion.identity, fraction);
+            transform.localRotation = Quaternion.Slerp(returnFromRot, neutralRotation, fraction);
         } else if (canBob && bobbing) {
             if (bobTimer == 0.0f && startBob) {
                 lastBobPos = transform.localPosition;
@@ -94,8 +97,8 @@ public class GunAnimator : MonoBehaviour {
     private void doRecoil() {
         returnTimer = 0.0f;
         returnTime = recoilTime;
-        returnFromPos = Vector3.forward * recoil.x + Vector3.up * recoil.y + Vector3.right * recoil.z;
-        returnFromRot = Quaternion.Euler(recoilRot.x, recoilRot.y, recoilRot.z);
+        returnFromPos = recoilPoint.localPosition;
+        returnFromRot = recoilPoint.localRotation;
     }
 
     private void resetBob() {
@@ -123,28 +126,29 @@ public class GunAnimator : MonoBehaviour {
         if (!inAir) {
             canBob = true;
             resetBob();
-            setNeutral(Vector3.zero);
+            setNeutral(pullBackTime, Vector3.zero, Quaternion.identity);
         }
     }
 
     private void EnableGunBob() {
         canBob = true;
         resetBob();
-        setNeutral(Vector3.zero);
+        setNeutral(pullBackTime, Vector3.zero, Quaternion.identity);
     }
 
     private void DisableGunBob(bool inAir) {
         canBob = false;
         if (!inAir) {
-            setNeutral(new Vector3(0.0f, -0.05f, -0.1f));
+            setNeutral(pullBackTime, pullBackPoint.localPosition, pullBackPoint.localRotation);
         }
     }
 
-    private void setNeutral(Vector3 neutral) {
+    private void setNeutral(float time, Vector3 neutralPos, Quaternion neutralRot) {
         returnFromPos = transform.localPosition;
         returnFromRot = transform.localRotation;
-        neutralPosition = neutral;
+        neutralPosition = neutralPos;
+        neutralRotation = neutralRot;
         returnTimer = 0.0f;
-        returnTime = 0.1f;
+        returnTime = time;
     }
 }
