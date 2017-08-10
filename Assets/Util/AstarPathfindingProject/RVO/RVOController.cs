@@ -1,6 +1,5 @@
 using UnityEngine;
 using Pathfinding;
-using Pathfinding.RVO;
 using System.Collections.Generic;
 
 namespace Pathfinding.RVO {
@@ -20,8 +19,8 @@ namespace Pathfinding.RVO {
 	 * \astarpro
 	 */
 	[AddComponentMenu("Pathfinding/Local Avoidance/RVO Controller")]
+	[HelpURL("http://arongranberg.com/astar/docs/class_pathfinding_1_1_r_v_o_1_1_r_v_o_controller.php")]
 	public class RVOController : MonoBehaviour {
-
 		/** Radius of the agent */
 		[Tooltip("Radius of the agent")]
 		public float radius = 5;
@@ -53,17 +52,17 @@ namespace Pathfinding.RVO {
 		public float obstacleTimeHorizon = 2;
 
 		/** Maximum distance to other agents to take them into account for collisions.
-		  * Decreasing this value can lead to better performance, increasing it can lead to better quality of the simulation.
-		  */
+		 * Decreasing this value can lead to better performance, increasing it can lead to better quality of the simulation.
+		 */
 		[Tooltip("Maximum distance to other agents to take them into account for collisions.\n" +
-		         "Decreasing this value can lead to better performance, increasing it can lead to better quality of the simulation")]
+			 "Decreasing this value can lead to better performance, increasing it can lead to better quality of the simulation")]
 		public float neighbourDist = 10;
 
 		/** Max number of other agents to take into account.
 		 * A smaller value can reduce CPU load, a higher value can lead to better local avoidance quality.
 		 */
 		[Tooltip("Max number of other agents to take into account.\n" +
-		         "A smaller value can reduce CPU load, a higher value can lead to better local avoidance quality.")]
+			 "A smaller value can reduce CPU load, a higher value can lead to better local avoidance quality.")]
 		public int maxNeighbours = 10;
 
 		/** Layer mask for the ground.
@@ -134,9 +133,12 @@ namespace Pathfinding.RVO {
 	#endif
 
 		/** Position for the previous frame.
-		  * Used to check if the agent has moved manually
-		  */
+		 * Used to check if the agent has moved manually
+		 */
 		private Vector3 lastPosition;
+
+		/** To avoid having to use FindObjectOfType every time */
+		static RVOSimulator cachedSimulator;
 
 		/** Current position of the agent */
 		public Vector3 position {
@@ -149,41 +151,43 @@ namespace Pathfinding.RVO {
 		}
 
 		public void OnDisable () {
-
-			if ( simulator == null ) return;
+			if (simulator == null) return;
 
 			//Remove the agent from the simulation but keep the reference
 			//this component might get enabled and then we can simply
 			//add it to the simulation again
-			simulator.RemoveAgent (rvoAgent);
+			simulator.RemoveAgent(rvoAgent);
 		}
 
 		public void Awake () {
 			tr = transform;
 
-			var sim = FindObjectOfType(typeof(RVOSimulator)) as RVOSimulator;
-			if (sim == null) {
-				Debug.LogError ("No RVOSimulator component found in the scene. Please add one.");
-				return;
+			// Find the RVOSimulator in this scene
+			if (cachedSimulator == null) {
+				cachedSimulator = FindObjectOfType<RVOSimulator>();
 			}
-			simulator = sim.GetSimulator ();
+
+			if (cachedSimulator == null) {
+				Debug.LogError("No RVOSimulator component found in the scene. Please add one.");
+			} else {
+				simulator = cachedSimulator.GetSimulator();
+			}
 		}
 
 		public void OnEnable () {
-
-			if ( simulator == null ) return;
+			if (simulator == null) return;
 
 			//We might have an rvoAgent
 			//which was disabled previously
 			//if so, we can simply add it to the simulation again
 			if (rvoAgent != null) {
-				simulator.AddAgent (rvoAgent);
+				simulator.AddAgent(rvoAgent);
 			} else {
-				rvoAgent = simulator.AddAgent (transform.position);
+				rvoAgent = simulator.AddAgent(transform.position);
 			}
 
-			UpdateAgentProperties ();
-			rvoAgent.Teleport (transform.position);
+			UpdateAgentProperties();
+			rvoAgent.Teleport(transform.position);
 			adjustedY = rvoAgent.Position.y;
 		}
 
@@ -219,23 +223,22 @@ namespace Pathfinding.RVO {
 		public void Teleport (Vector3 pos) {
 			tr.position = pos;
 			lastPosition = pos;
-			rvoAgent.Teleport (pos);
+			rvoAgent.Teleport(pos);
 			adjustedY = pos.y;
 		}
 
 		public void Update () {
-
-			if ( rvoAgent == null ) return;
+			if (rvoAgent == null) return;
 
 			if (lastPosition != tr.position) {
-				Teleport (tr.position);
+				Teleport(tr.position);
 			}
 
 			if (lockWhenNotMoving) {
 				locked = desiredVelocity == Vector3.zero;
 			}
 
-			UpdateAgentProperties ();
+			UpdateAgentProperties();
 
 			RaycastHit hit;
 
@@ -243,52 +246,52 @@ namespace Pathfinding.RVO {
 			Vector3 realPos = rvoAgent.InterpolatedPosition;
 			realPos.y = adjustedY;
 
-			if (mask != 0 && Physics.Raycast (realPos + Vector3.up*height*0.5f,Vector3.down, out hit, float.PositiveInfinity, mask)) {
+			if (mask != 0 && Physics.Raycast(realPos + Vector3.up*height*0.5f, Vector3.down, out hit, float.PositiveInfinity, mask)) {
 				adjustedY = hit.point.y;
 			} else {
 				adjustedY = 0;
 			}
 			realPos.y = adjustedY;
 
-			rvoAgent.SetYPosition (adjustedY);
+			rvoAgent.SetYPosition(adjustedY);
 
 			Vector3 force = Vector3.zero;
 
 			if (wallAvoidFalloff > 0 && wallAvoidForce > 0) {
 				List<ObstacleVertex> obst = rvoAgent.NeighbourObstacles;
 
-				if ( obst != null ) for (int i=0;i<obst.Count;i++) {
-					Vector3 a = obst[i].position;
-					Vector3 b = obst[i].next.position;
+				if (obst != null) for (int i = 0; i < obst.Count; i++) {
+						Vector3 a = obst[i].position;
+						Vector3 b = obst[i].next.position;
 
-					Vector3 closest = position - AstarMath.NearestPointStrict (a,b,position);
+						Vector3 closest = position - VectorMath.ClosestPointOnSegment(a, b, position);
 
-					if (closest == a || closest == b) continue;
+						if (closest == a || closest == b) continue;
 
-					float dist = closest.sqrMagnitude;
-					closest /= dist*wallAvoidFalloff;
-					force += closest;
-				}
+						float dist = closest.sqrMagnitude;
+						closest /= dist*wallAvoidFalloff;
+						force += closest;
+					}
 			}
 
 	#if ASTARDEBUG
-			Debug.DrawRay (position, desiredVelocity + force*wallAvoidForce);
+			Debug.DrawRay(position, desiredVelocity + force*wallAvoidForce);
 	#endif
 			rvoAgent.DesiredVelocity = desiredVelocity + force*wallAvoidForce;
 
 			tr.position = realPos + Vector3.up*height*0.5f - center;
 			lastPosition = tr.position;
 
-			if ( enableRotation && velocity != Vector3.zero ) transform.rotation = Quaternion.Lerp (transform.rotation, Quaternion.LookRotation ( velocity ), Time.deltaTime * rotationSpeed * Mathf.Min (velocity.magnitude, 0.2f) );
+			if (enableRotation && velocity != Vector3.zero) transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(velocity), Time.deltaTime * rotationSpeed * Mathf.Min(velocity.magnitude, 0.2f));
 		}
 
-		private static readonly Color GizmoColor = new Color(240/255f,213/255f,30/255f);
+		private static readonly Color GizmoColor = new Color(240/255f, 213/255f, 30/255f);
 
 		public void OnDrawGizmos () {
 			Gizmos.color = GizmoColor;
-			Gizmos.DrawWireSphere (transform.position+center - Vector3.up*height*0.5f + Vector3.up*radius*0.5f, radius);
-			Gizmos.DrawLine (transform.position+center - Vector3.up*height*0.5f, transform.position+center + Vector3.up*height*0.5f);
-			Gizmos.DrawWireSphere (transform.position+center + Vector3.up*height*0.5f - Vector3.up*radius*0.5f, radius);
+			Gizmos.DrawWireSphere(transform.position+center - Vector3.up*height*0.5f + Vector3.up*radius*0.5f, radius);
+			Gizmos.DrawLine(transform.position+center - Vector3.up*height*0.5f, transform.position+center + Vector3.up*height*0.5f);
+			Gizmos.DrawWireSphere(transform.position+center + Vector3.up*height*0.5f - Vector3.up*radius*0.5f, radius);
 		}
 	}
 }

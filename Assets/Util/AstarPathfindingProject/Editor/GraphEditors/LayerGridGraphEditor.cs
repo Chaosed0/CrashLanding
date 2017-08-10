@@ -1,19 +1,16 @@
 using UnityEngine;
 using UnityEditor;
-using Pathfinding;
 
 namespace Pathfinding {
-	[CustomGraphEditor (typeof(LayerGridGraph),"Layered Grid Graph")]
+	[CustomGraphEditor(typeof(LayerGridGraph), "Layered Grid Graph")]
 	public class LayerGridGraphEditor : GridGraphEditor {
-
 		public override void OnInspectorGUI (NavGraph target) {
-
 			var graph = target as LayerGridGraph;
 
-			base.OnInspectorGUI (target);
+			base.OnInspectorGUI(target);
 
 			if (graph.neighbours != NumNeighbours.Four) {
-				Debug.Log ("Note: Only 4 neighbours per grid node is allowed in this graph type");
+				Debug.Log("Note: Only 4 neighbours per grid node is allowed in this graph type");
 			}
 		}
 
@@ -26,20 +23,20 @@ namespace Pathfinding {
 
 			DrawNeighbours(graph);
 
-			layerGridGraph.characterHeight = EditorGUILayout.FloatField ("Character Height", layerGridGraph.characterHeight);
+			layerGridGraph.characterHeight = EditorGUILayout.FloatField("Character Height", layerGridGraph.characterHeight);
 			DrawMaxClimb(graph);
 
 			DrawMaxSlope(graph);
 			DrawErosion(graph);
 
-			layerGridGraph.mergeSpanRange = EditorGUILayout.FloatField ("Merge Span Range",layerGridGraph.mergeSpanRange);
+			layerGridGraph.mergeSpanRange = EditorGUILayout.FloatField("Merge Span Range", layerGridGraph.mergeSpanRange);
 		}
 
 		protected override void DrawMaxClimb (GridGraph graph) {
 			var layerGridGraph = graph as LayerGridGraph;
 
 			base.DrawMaxClimb(graph);
-			layerGridGraph.maxClimb = Mathf.Clamp (layerGridGraph.maxClimb,0,layerGridGraph.characterHeight);
+			layerGridGraph.maxClimb = Mathf.Clamp(layerGridGraph.maxClimb, 0, layerGridGraph.characterHeight);
 
 			if (layerGridGraph.maxClimb == layerGridGraph.characterHeight) {
 				EditorGUILayout.HelpBox("Max climb needs to be smaller or equal to character height", MessageType.Info);
@@ -53,7 +50,7 @@ namespace Pathfinding {
 		protected override void DrawNeighbours (GridGraph graph) {
 			graph.neighbours = NumNeighbours.Four;
 			EditorGUI.BeginDisabledGroup(true);
-			EditorGUILayout.EnumPopup (new GUIContent ("Connections","Only 4 connections per node is possible on layered grid graphs"),graph.neighbours);
+			EditorGUILayout.EnumPopup(new GUIContent("Connections", "Only 4 connections per node is possible on layered grid graphs"), graph.neighbours);
 			EditorGUI.EndDisabledGroup();
 		}
 
@@ -65,7 +62,7 @@ namespace Pathfinding {
 			base.DrawCollisionEditor(collision);
 
 			if (collision.thickRaycast) {
-				EditorGUILayout.HelpBox ("Note: Thick raycast cannot be used with this graph type", MessageType.Error);
+				EditorGUILayout.HelpBox("Note: Thick raycast cannot be used with this graph type", MessageType.Error);
 			}
 		}
 

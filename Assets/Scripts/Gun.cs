@@ -17,7 +17,7 @@ public class Gun : MonoBehaviour {
     public delegate void FireDelegate();
     public event FireDelegate OnFire;
 
-    void Update() {
+    void LateUpdate() {
         cooldownTimer += Time.deltaTime;
         
         if (firing && cooldownTimer >= cooldown) {
@@ -37,7 +37,8 @@ public class Gun : MonoBehaviour {
 
         /* Spawn the bullet */
         Quaternion bulletRot = randomBulletRot(Camera.main.transform);
-        Instantiate(bulletPrefab, barrelPoint.position, bulletRot);
+        Bullet bullet = Instantiate<Bullet>(bulletPrefab, barrelPoint.position, bulletRot);
+
         cooldownTimer = 0.0f;
 
         /* Check for a hit */
@@ -63,13 +64,10 @@ public class Gun : MonoBehaviour {
     }
 
     private Quaternion randomBulletRot(Transform origin) {
-        Vector3 fwd = origin.forward;
-        Vector3 right = origin.right;
-        Vector3 up = origin.up;
+        float angle = Random.Range(-bulletSpread, bulletSpread);
+        float axisAngle = Random.Range(0, Mathf.PI*2);
+        Vector3 axis = new Vector3(Mathf.Cos(axisAngle), Mathf.Sin(axisAngle), 0);
 
-        float upRot = Mathf.Deg2Rad * Random.Range(-bulletSpread, bulletSpread);
-        float rightRot = Mathf.Deg2Rad * Random.Range(-bulletSpread, bulletSpread);
-
-        return Quaternion.LookRotation(Vector3.RotateTowards(Vector3.RotateTowards(fwd, up, upRot, 0.0f), right, rightRot, 0.0f));
+        return origin.transform.rotation * Quaternion.AngleAxis(angle, axis);
     }
 }

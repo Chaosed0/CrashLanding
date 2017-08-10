@@ -1,39 +1,34 @@
 #if !ASTAR_NO_GRID_GRAPH
 using UnityEngine;
 using System.Collections.Generic;
-using Pathfinding.Serialization.JsonFx;
 using Pathfinding.Serialization;
 
 namespace Pathfinding {
-
 	/** Grid Graph, supports layered worlds.
 	 * The GridGraph is great in many ways, reliable, easily configured and updatable during runtime.
 	 * But it lacks support for worlds which have multiple layers, such as a building with multiple floors.\n
 	 * That's where this graph type comes in. It supports basically the same stuff as the grid graph, but also multiple layers.
 	 * It uses a more memory, and is probably a bit slower.
 	 * \note Does not support 8 connections per node, only 4.
-
-\ingroup graphs
-\shadowimage{layergridgraph_graph.png}
-\shadowimage{layergridgraph_inspector.png}
-
-\astarpro
+	 *
+	 * \ingroup graphs
+	 * \shadowimage{layergridgraph_graph.png}
+	 * \shadowimage{layergridgraph_inspector.png}
+	 *
+	 * \astarpro
 	 */
 	public class LayerGridGraph : GridGraph, IUpdatableGraph {
-
 		//This function will be called when this graph is destroyed
 		public override void OnDestroy () {
-			base.OnDestroy ();
+			base.OnDestroy();
 
 			//Clean up a reference in a static variable which otherwise should point to this graph forever and stop the GC from collecting it
-			RemoveGridGraphFromStatic ();
+			RemoveGridGraphFromStatic();
 		}
 
 		void RemoveGridGraphFromStatic () {
-			LevelGridNode.SetGridGraph ( active.astarData.GetGraphIndex (this), null);
+			LevelGridNode.SetGridGraph(active.astarData.GetGraphIndex(this), null);
 		}
-
-		public int[] nodeCellIndices;
 
 		/** Number of layers.
 		 * \warning Do not modify this variable
@@ -60,18 +55,27 @@ namespace Pathfinding {
 			}
 		}
 
+		public override int CountNodes () {
+			if (nodes == null) return 0;
+
+			int counter = 0;
+			for (int i = 0; i < nodes.Length; i++) {
+				if (nodes[i] != null) counter++;
+			}
+			return counter;
+		}
+
 		public override void GetNodes (GraphNodeDelegateCancelable del) {
 			if (nodes == null) return;
 
-			for (int i=0;i < nodes.Length;i++) {
+			for (int i = 0; i < nodes.Length; i++) {
 				if (nodes[i] != null && !del(nodes[i])) break;
 			}
 		}
 
 		public new void UpdateArea (GraphUpdateObject o) {
-
 			if (nodes == null || nodes.Length != width*depth*layerCount) {
-				Debug.LogWarning ("The Grid Graph is not scanned, cannot update area ");
+				Debug.LogWarning("The Grid Graph is not scanned, cannot update area ");
 				//Not scanned
 				return;
 			}
@@ -83,27 +87,27 @@ namespace Pathfinding {
 			//node.position = matrix.MultiplyPoint3x4 (new Vector3 (x+0.5F,0,z+0.5F));
 
 			Vector3 min, max;
-			GetBoundsMinMax (b,inverseMatrix,out min, out max);
+			GetBoundsMinMax(b, inverseMatrix, out min, out max);
 
-			int minX = Mathf.RoundToInt (min.x-0.5F);
-			int maxX = Mathf.RoundToInt (max.x-0.5F);
+			int minX = Mathf.RoundToInt(min.x-0.5F);
+			int maxX = Mathf.RoundToInt(max.x-0.5F);
 
-			int minZ = Mathf.RoundToInt (min.z-0.5F);
-			int maxZ = Mathf.RoundToInt (max.z-0.5F);
+			int minZ = Mathf.RoundToInt(min.z-0.5F);
+			int maxZ = Mathf.RoundToInt(max.z-0.5F);
 			//We now have coordinates in local space (i.e 1 unit = 1 node)
 
-			var originalRect = new IntRect(minX,minZ,maxX,maxZ);
+			var originalRect = new IntRect(minX, minZ, maxX, maxZ);
 			var affectRect = originalRect;
 
-			var gridRect = new IntRect(0,0,width-1,depth-1);
+			var gridRect = new IntRect(0, 0, width-1, depth-1);
 
 			var physicsRect = originalRect;
 
 #if ASTARDEBUG
 			Matrix4x4 debugMatrix = matrix;
-			debugMatrix *= Matrix4x4.TRS (new Vector3(0.5f,0,0.5f),Quaternion.identity,Vector3.one);
+			debugMatrix *= Matrix4x4.TRS(new Vector3(0.5f, 0, 0.5f), Quaternion.identity, Vector3.one);
 
-			originalRect.DebugDraw (debugMatrix,Color.red);
+			originalRect.DebugDraw(debugMatrix, Color.red);
 #endif
 
 			bool willChangeWalkability = o.updatePhysics || o.modifyWalkability;
@@ -113,8 +117,8 @@ namespace Pathfinding {
 
 			int erosion = o.updateErosion ? erodeIterations : 0;
 
-			if (o.trackChangedNodes	&& willChangeNodeInstances) {
-				Debug.LogError ("Cannot track changed nodes when creating or deleting nodes.\nWill not update LayerGridGraph");
+			if (o.trackChangedNodes && willChangeNodeInstances) {
+				Debug.LogError("Cannot track changed nodes when creating or deleting nodes.\nWill not update LayerGridGraph");
 				return;
 			}
 
@@ -123,35 +127,35 @@ namespace Pathfinding {
 			if (o.updatePhysics && !o.modifyWalkability) {
 				//Add the collision.diameter margin for physics calls
 				if (collision.collisionCheck) {
-					Vector3 margin = new Vector3 (collision.diameter,0,collision.diameter)*0.5F;
+					Vector3 margin = new Vector3(collision.diameter, 0, collision.diameter)*0.5F;
 
 					min -= margin*1.02F;//0.02 safety margin, physics is rarely very accurate
 					max += margin*1.02F;
 
 					physicsRect = new IntRect(
-					                            Mathf.RoundToInt (min.x-0.5F),
-					                            Mathf.RoundToInt (min.z-0.5F),
-					                            Mathf.RoundToInt (max.x-0.5F),
-					                            Mathf.RoundToInt (max.z-0.5F)
-					                            );
+						Mathf.RoundToInt(min.x-0.5F),
+						Mathf.RoundToInt(min.z-0.5F),
+						Mathf.RoundToInt(max.x-0.5F),
+						Mathf.RoundToInt(max.z-0.5F)
+						);
 
-					affectRect = IntRect.Union (physicsRect, affectRect);
+					affectRect = IntRect.Union(physicsRect, affectRect);
 				}
 			}
 
 			if (willChangeWalkability || erosion > 0) {
 				//Add affect radius for erosion. +1 for updating connectivity info at the border
-				affectRect = affectRect.Expand (erosion + 1);
+				affectRect = affectRect.Expand(erosion + 1);
 			}
 
-			IntRect clampedRect = IntRect.Intersection (affectRect,gridRect);
+			IntRect clampedRect = IntRect.Intersection(affectRect, gridRect);
 
 			//Mark nodes that might be changed
 			if (!willChangeNodeInstances) {
-				for (int x = clampedRect.xmin; x <= clampedRect.xmax;x++) {
-					for (int z = clampedRect.ymin;z <= clampedRect.ymax;z++) {
-						for (int y=0;y<layerCount;y++) {
-							o.WillUpdateNode (nodes[y*width*depth + z*width+x]);
+				for (int x = clampedRect.xmin; x <= clampedRect.xmax; x++) {
+					for (int z = clampedRect.ymin; z <= clampedRect.ymax; z++) {
+						for (int y = 0; y < layerCount; y++) {
+							o.WillUpdateNode(nodes[y*width*depth + z*width+x]);
 						}
 					}
 				}
@@ -159,30 +163,29 @@ namespace Pathfinding {
 
 			//Update Physics
 			if (o.updatePhysics && !o.modifyWalkability) {
+				collision.Initialize(matrix, nodeSize);
 
-				collision.Initialize (matrix,nodeSize);
-
-				clampedRect = IntRect.Intersection (physicsRect,gridRect);
+				clampedRect = IntRect.Intersection(physicsRect, gridRect);
 
 				bool addedNodes = false;
 
-				for (int x = clampedRect.xmin; x <= clampedRect.xmax;x++) {
-					for (int z = clampedRect.ymin;z <= clampedRect.ymax;z++) {
+				for (int x = clampedRect.xmin; x <= clampedRect.xmax; x++) {
+					for (int z = clampedRect.ymin; z <= clampedRect.ymax; z++) {
 						/** \todo FIX */
-						addedNodes |= RecalculateCell (x,z,preserveExistingNodes);
+						addedNodes |= RecalculateCell(x, z, preserveExistingNodes);
 					}
 				}
 
-				for (int x = clampedRect.xmin; x <= clampedRect.xmax;x++) {
-					for (int z = clampedRect.ymin;z <= clampedRect.ymax;z++) {
-						for (int y=0;y<layerCount;y++) {
+				for (int x = clampedRect.xmin; x <= clampedRect.xmax; x++) {
+					for (int z = clampedRect.ymin; z <= clampedRect.ymax; z++) {
+						for (int y = 0; y < layerCount; y++) {
 							int index = y*width*depth + z*width+x;
 
 							var node = nodes[index];
 
 							if (node == null) continue;
 
-							CalculateConnections (nodes,node,x,z,y);
+							CalculateConnections(nodes, node, x, z, y);
 						}
 					}
 				}
@@ -190,10 +193,10 @@ namespace Pathfinding {
 
 			//Apply GUO
 
-			clampedRect = IntRect.Intersection (originalRect, gridRect);
-			for (int x = clampedRect.xmin; x <= clampedRect.xmax;x++) {
-				for (int z = clampedRect.ymin;z <= clampedRect.ymax;z++) {
-					for (int y=0;y<layerCount;y++) {
+			clampedRect = IntRect.Intersection(originalRect, gridRect);
+			for (int x = clampedRect.xmin; x <= clampedRect.xmax; x++) {
+				for (int z = clampedRect.ymin; z <= clampedRect.ymax; z++) {
+					for (int y = 0; y < layerCount; y++) {
 						int index = y*width*depth + z*width+x;
 
 						var node = nodes[index];
@@ -202,63 +205,60 @@ namespace Pathfinding {
 
 						if (willChangeWalkability) {
 							node.Walkable = node.WalkableErosion;
-							if (o.bounds.Contains ((Vector3)node.position)) o.Apply (node);
+							if (o.bounds.Contains((Vector3)node.position)) o.Apply(node);
 							node.WalkableErosion = node.Walkable;
 						} else {
-							if (o.bounds.Contains ((Vector3)node.position)) o.Apply (node);
+							if (o.bounds.Contains((Vector3)node.position)) o.Apply(node);
 						}
 					}
 				}
 			}
 
 #if ASTARDEBUG
-			physicsRect.DebugDraw (debugMatrix,Color.blue);
-			affectRect.DebugDraw (debugMatrix,Color.black);
+			physicsRect.DebugDraw(debugMatrix, Color.blue);
+			affectRect.DebugDraw(debugMatrix, Color.black);
 #endif
 
 			//Recalculate connections
 			if (willChangeWalkability && erosion == 0) {
-
-				clampedRect = IntRect.Intersection (affectRect, gridRect);
-				for (int x = clampedRect.xmin; x <= clampedRect.xmax;x++) {
-					for (int z = clampedRect.ymin;z <= clampedRect.ymax;z++) {
-						for (int y=0;y<layerCount;y++) {
+				clampedRect = IntRect.Intersection(affectRect, gridRect);
+				for (int x = clampedRect.xmin; x <= clampedRect.xmax; x++) {
+					for (int z = clampedRect.ymin; z <= clampedRect.ymax; z++) {
+						for (int y = 0; y < layerCount; y++) {
 							int index = y*width*depth + z*width+x;
 
 							var node = nodes[index];
 
 							if (node == null) continue;
 
-							CalculateConnections (nodes,node,x,z,y);
+							CalculateConnections(nodes, node, x, z, y);
 						}
 					}
 				}
 			} else if (willChangeWalkability && erosion > 0) {
+				clampedRect = IntRect.Union(originalRect, physicsRect);
 
+				IntRect erosionRect1 = clampedRect.Expand(erosion);
+				IntRect erosionRect2 = erosionRect1.Expand(erosion);
 
-				clampedRect = IntRect.Union (originalRect, physicsRect);
-
-				IntRect erosionRect1 = clampedRect.Expand (erosion);
-				IntRect erosionRect2 = erosionRect1.Expand (erosion);
-
-				erosionRect1 = IntRect.Intersection (erosionRect1,gridRect);
-				erosionRect2 = IntRect.Intersection (erosionRect2,gridRect);
+				erosionRect1 = IntRect.Intersection(erosionRect1, gridRect);
+				erosionRect2 = IntRect.Intersection(erosionRect2, gridRect);
 
 #if ASTARDEBUG
-				erosionRect1.DebugDraw (debugMatrix,Color.magenta);
-				erosionRect2.DebugDraw (debugMatrix,Color.cyan);
+				erosionRect1.DebugDraw(debugMatrix, Color.magenta);
+				erosionRect2.DebugDraw(debugMatrix, Color.cyan);
 #endif
 
 				/*
-				all nodes inside clampedRect might have had their walkability changed
-				all nodes inside erosionRect1 might get affected by erosion from clampedRect and erosionRect2
-				all nodes inside erosionRect2 (but outside erosionRect1) will be reset to previous walkability
-				after calculation since their erosion might not be correctly calculated (nodes outside erosionRect2 would maybe have effect)
-				*/
+				 * all nodes inside clampedRect might have had their walkability changed
+				 * all nodes inside erosionRect1 might get affected by erosion from clampedRect and erosionRect2
+				 * all nodes inside erosionRect2 (but outside erosionRect1) will be reset to previous walkability
+				 * after calculation since their erosion might not be correctly calculated (nodes outside erosionRect2 would maybe have effect)
+				 */
 
-				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax;x++) {
-					for (int z = erosionRect2.ymin;z <= erosionRect2.ymax;z++) {
-						for (int y=0;y<layerCount;y++) {
+				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax; x++) {
+					for (int z = erosionRect2.ymin; z <= erosionRect2.ymax; z++) {
+						for (int y = 0; y < layerCount; y++) {
 							int index = y*width*depth + z*width+x;
 
 							var node = nodes[index];
@@ -268,7 +268,7 @@ namespace Pathfinding {
 							bool tmp = node.Walkable;
 							node.Walkable = node.WalkableErosion;
 
-							if (!erosionRect1.Contains (x,z)) {
+							if (!erosionRect1.Contains(x, z)) {
 								//Save the border's walkabilty data in bit 16 (will be reset later)
 								node.TmpWalkable = tmp;
 							}
@@ -276,9 +276,9 @@ namespace Pathfinding {
 					}
 				}
 
-				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax;x++) {
-					for (int z = erosionRect2.ymin;z <= erosionRect2.ymax;z++) {
-						for (int y=0;y<layerCount;y++) {
+				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax; x++) {
+					for (int z = erosionRect2.ymin; z <= erosionRect2.ymax; z++) {
+						for (int y = 0; y < layerCount; y++) {
 							int index = y*width*depth + z*width+x;
 
 							var node = nodes[index];
@@ -287,21 +287,21 @@ namespace Pathfinding {
 
 #if ASTARDEBUG
 							if (!node.Walkable)
-								Debug.DrawRay ((Vector3)node.position, Vector3.up*2,Color.red);
+								Debug.DrawRay((Vector3)node.position, Vector3.up*2, Color.red);
 #endif
-							CalculateConnections (nodes,node,x,z,y);
+							CalculateConnections(nodes, node, x, z, y);
 						}
 					}
 				}
 
 				// Erode the walkable area
-				ErodeWalkableArea (erosionRect2.xmin,erosionRect2.ymin,erosionRect2.xmax+1,erosionRect2.ymax+1);
+				ErodeWalkableArea(erosionRect2.xmin, erosionRect2.ymin, erosionRect2.xmax+1, erosionRect2.ymax+1);
 
-				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax;x++) {
-					for (int z = erosionRect2.ymin;z <= erosionRect2.ymax;z++) {
-						if (erosionRect1.Contains (x,z)) continue;
+				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax; x++) {
+					for (int z = erosionRect2.ymin; z <= erosionRect2.ymax; z++) {
+						if (erosionRect1.Contains(x, z)) continue;
 
-						for (int y=0;y<layerCount;y++) {
+						for (int y = 0; y < layerCount; y++) {
 							int index = y*width*depth + z*width+x;
 
 							var node = nodes[index];
@@ -315,16 +315,16 @@ namespace Pathfinding {
 				}
 
 				// Recalculate connections of all affected nodes
-				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax;x++) {
-					for (int z = erosionRect2.ymin;z <= erosionRect2.ymax;z++) {
-						for (int y=0;y<layerCount;y++) {
+				for (int x = erosionRect2.xmin; x <= erosionRect2.xmax; x++) {
+					for (int z = erosionRect2.ymin; z <= erosionRect2.ymax; z++) {
+						for (int y = 0; y < layerCount; y++) {
 							int index = y*width*depth + z*width+x;
 
 							var node = nodes[index];
 
 							if (node == null) continue;
 
-							CalculateConnections (nodes,node,x,z,y);
+							CalculateConnections(nodes, node, x, z, y);
 						}
 					}
 				}
@@ -332,45 +332,43 @@ namespace Pathfinding {
 		}
 
 		public override void ScanInternal (OnScanStatus statusCallback) {
-
 			if (nodeSize <= 0) {
 				return;
 			}
 
-			GenerateMatrix ();
+			GenerateMatrix();
 
 			if (width > 1024 || depth > 1024) {
-				Debug.LogError ("One of the grid's sides is longer than 1024 nodes");
+				Debug.LogError("One of the grid's sides is longer than 1024 nodes");
 				return;
 			}
 
 			lastScannedWidth = width;
 			lastScannedDepth = depth;
 
-			SetUpOffsetsAndCosts ();
+			SetUpOffsetsAndCosts();
 
-			LevelGridNode.SetGridGraph (active.astarData.GetGraphIndex(this), this);
+			LevelGridNode.SetGridGraph(active.astarData.GetGraphIndex(this), this);
 
-			maxClimb = Mathf.Clamp (maxClimb,0,characterHeight);
+			maxClimb = Mathf.Clamp(maxClimb, 0, characterHeight);
 
 			var linkedCells = new LinkedLevelCell[width*depth];
 
-			collision = collision ?? new GraphCollision ();
-			collision.Initialize (matrix,nodeSize);
+			collision = collision ?? new GraphCollision();
+			collision.Initialize(matrix, nodeSize);
 
-			for (int z = 0; z < depth; z ++) {
+			for (int z = 0; z < depth; z++) {
 				for (int x = 0; x < width; x++) {
-
-					linkedCells[z*width+x] = new LinkedLevelCell ();
+					linkedCells[z*width+x] = new LinkedLevelCell();
 
 					LinkedLevelCell llc = linkedCells[z*width+x];
 
-					Vector3 pos = matrix.MultiplyPoint3x4 (new Vector3 (x+0.5F,0,z+0.5F));
+					Vector3 pos = matrix.MultiplyPoint3x4(new Vector3(x+0.5F, 0, z+0.5F));
 
 
-					RaycastHit[] hits = collision.CheckHeightAll (pos);
+					RaycastHit[] hits = collision.CheckHeightAll(pos);
 
-					for (int i=0;i<hits.Length/2;i++) {
+					for (int i = 0; i < hits.Length/2; i++) {
 						RaycastHit tmp = hits[i];
 
 						hits[i] = hits[hits.Length-1-i];
@@ -378,25 +376,23 @@ namespace Pathfinding {
 					}
 
 					if (hits.Length > 0) {
-
 						LinkedLevelNode lln = null;
 
-						for (int i=0;i<hits.Length;i++) {
-
-							var tmp = new LinkedLevelNode ();
+						for (int i = 0; i < hits.Length; i++) {
+							var tmp = new LinkedLevelNode();
 							tmp.position = hits[i].point;
 
 							if (lln != null) {
 								/** \todo Use hit.distance instead */
 								if (tmp.position.y - lln.position.y <= mergeSpanRange) {
-										lln.position = tmp.position;
-										lln.hit = hits[i];
-										lln.walkable = collision.Check (tmp.position);
+									lln.position = tmp.position;
+									lln.hit = hits[i];
+									lln.walkable = collision.Check(tmp.position);
 									continue;
 								}
 							}
 
-							tmp.walkable = collision.Check (tmp.position);
+							tmp.walkable = collision.Check(tmp.position);
 							tmp.hit = hits[i];
 							tmp.height = float.PositiveInfinity;
 
@@ -409,10 +405,9 @@ namespace Pathfinding {
 								lln.height = tmp.position.y - lln.position.y;
 								lln = lln.next;
 							}
-
 						}
 					} else {
-						var lln = new LinkedLevelNode ();
+						var lln = new LinkedLevelNode();
 						lln.position = pos;
 						lln.height = float.PositiveInfinity;
 						lln.walkable = !collision.unwalkableWhenNoGround;
@@ -425,9 +420,8 @@ namespace Pathfinding {
 			int spanCount = 0;
 			layerCount = 0;
 			// Count the total number of nodes in the graph
-			for (int z = 0; z < depth; z ++) {
+			for (int z = 0; z < depth; z++) {
 				for (int x = 0; x < width; x++) {
-
 					LinkedLevelCell llc = linkedCells[z*width+x];
 
 					LinkedLevelNode lln = llc.first;
@@ -444,25 +438,24 @@ namespace Pathfinding {
 			}
 
 			if (layerCount > LevelGridNode.MaxLayerCount) {
-				Debug.LogError ("Too many layers, a maximum of LevelGridNode.MaxLayerCount are allowed (found "+layerCount+")");
+				Debug.LogError("Too many layers, a maximum of LevelGridNode.MaxLayerCount are allowed (found "+layerCount+")");
 				return;
 			}
 
 			// Create all nodes
 			nodes = new LevelGridNode[width*depth*layerCount];
-			for (int i=0;i<nodes.Length;i++) {
-				nodes[i] = new LevelGridNode (active);
+			for (int i = 0; i < nodes.Length; i++) {
+				nodes[i] = new LevelGridNode(active);
 				nodes[i].Penalty = initialPenalty;
 			}
 
 			int nodeIndex = 0;
 
 			// Max slope in cosinus
-			float cosAngle = Mathf.Cos (maxSlope*Mathf.Deg2Rad);
+			float cosAngle = Mathf.Cos(maxSlope*Mathf.Deg2Rad);
 
 			for (int z = 0; z < depth; z++) {
 				for (int x = 0; x < width; x++) {
-
 					LinkedLevelCell llc = linkedCells[z*width+x];
 					LinkedLevelNode lln = llc.first;
 
@@ -475,17 +468,17 @@ namespace Pathfinding {
 #if ASTAR_SET_LEVELGRIDNODE_HEIGHT
 						node.height = lln.height;
 #endif
-						node.SetPosition ((Int3)lln.position);
+						node.SetPosition((Int3)lln.position);
 						node.Walkable = lln.walkable;
 
 						// Adjust penalty based on the surface slope
 						if (lln.hit.normal != Vector3.zero && (penaltyAngle || cosAngle < 1.0f)) {
 							//Take the dot product to find out the cosinus of the angle it has (faster than Vector3.Angle)
-							float angle = Vector3.Dot (lln.hit.normal.normalized,collision.up);
+							float angle = Vector3.Dot(lln.hit.normal.normalized, collision.up);
 
 							// Add penalty based on normal
 							if (penaltyAngle) {
-								node.Penalty += (uint)Mathf.RoundToInt ((1F-angle)*penaltyAngleFactor);
+								node.Penalty += (uint)Mathf.RoundToInt((1F-angle)*penaltyAngleFactor);
 							}
 
 							// Check if the slope is flat enough to stand on
@@ -508,7 +501,7 @@ namespace Pathfinding {
 						layerIndex++;
 					} while (lln != null);
 
-					for (;layerIndex<layerCount;layerIndex++) {
+					for (; layerIndex < layerCount; layerIndex++) {
 						nodes[z*width+x + width*depth*layerIndex] = null;
 					}
 
@@ -518,35 +511,33 @@ namespace Pathfinding {
 
 			nodeIndex = 0;
 
-			nodeCellIndices = new int[linkedCells.Length];
-
-			for (int z = 0; z < depth; z ++) {
+			for (int z = 0; z < depth; z++) {
 				for (int x = 0; x < width; x++) {
-					for (int i=0;i<layerCount;i++) {
+					for (int i = 0; i < layerCount; i++) {
 						GraphNode node = nodes[z*width+x + width*depth*i];
-						CalculateConnections (nodes,node,x,z,i);
+						CalculateConnections(nodes, node, x, z, i);
 					}
 				}
 			}
 
 			uint graphIndex = (uint)active.astarData.GetGraphIndex(this);
 
-			for (int i=0;i<nodes.Length;i++) {
+			for (int i = 0; i < nodes.Length; i++) {
 				var lgn = nodes[i];
 				if (lgn == null) continue;
 
-				UpdatePenalty (lgn);
+				UpdatePenalty(lgn);
 
 				lgn.GraphIndex = graphIndex;
 
 				// Set the node to be unwalkable if it hasn't got any connections
-				if (!lgn.HasAnyGridConnections ()) {
+				if (!lgn.HasAnyGridConnections()) {
 					lgn.Walkable = false;
 					lgn.WalkableErosion = lgn.Walkable;
 				}
 			}
 
-			ErodeWalkableArea ();
+			ErodeWalkableArea();
 		}
 
 		/** Recalculates single cell.
@@ -562,15 +553,14 @@ namespace Pathfinding {
 		 * \note Connections are not recalculated for the nodes.
 		 */
 		public bool RecalculateCell (int x, int z, bool preserveExistingNodes) {
+			var llc = new LinkedLevelCell();
 
-			var llc = new LinkedLevelCell ();
-
-			Vector3 pos = matrix.MultiplyPoint3x4 (new Vector3 (x+0.5F,0,z+0.5F));
+			Vector3 pos = matrix.MultiplyPoint3x4(new Vector3(x+0.5F, 0, z+0.5F));
 
 
-			RaycastHit[] hits = collision.CheckHeightAll (pos);
+			RaycastHit[] hits = collision.CheckHeightAll(pos);
 
-			for (int i=0;i<hits.Length/2;i++) {
+			for (int i = 0; i < hits.Length/2; i++) {
 				RaycastHit tmp = hits[i];
 
 				hits[i] = hits[hits.Length-1-i];
@@ -582,9 +572,8 @@ namespace Pathfinding {
 			if (hits.Length > 0) {
 				LinkedLevelNode lln = null;
 
-				for (int i=0;i<hits.Length;i++) {
-
-					var tmp = new LinkedLevelNode ();
+				for (int i = 0; i < hits.Length; i++) {
+					var tmp = new LinkedLevelNode();
 					tmp.position = hits[i].point;
 
 					if (lln != null) {
@@ -592,12 +581,12 @@ namespace Pathfinding {
 						if (tmp.position.y - lln.position.y <= mergeSpanRange) {
 							lln.position = tmp.position;
 							lln.hit = hits[i];
-							lln.walkable = collision.Check (tmp.position);
+							lln.walkable = collision.Check(tmp.position);
 							continue;
 						}
 					}
 
-					tmp.walkable = collision.Check (tmp.position);
+					tmp.walkable = collision.Check(tmp.position);
 					tmp.hit = hits[i];
 					tmp.height = float.PositiveInfinity;
 
@@ -610,10 +599,9 @@ namespace Pathfinding {
 						lln.height = tmp.position.y - lln.position.y;
 						lln = lln.next;
 					}
-
 				}
 			} else {
-				var lln = new LinkedLevelNode ();
+				var lln = new LinkedLevelNode();
 				lln.position = pos;
 				lln.height = float.PositiveInfinity;
 				lln.walkable = !collision.unwalkableWhenNoGround;
@@ -632,14 +620,13 @@ namespace Pathfinding {
 				int count = 0;
 				int layerIndex = 0;
 				do {
-
 					if (layerIndex >= layerCount) {
 						if (layerIndex+1 > LevelGridNode.MaxLayerCount) {
-							Debug.LogError ("Too many layers, a maximum of LevelGridNode.MaxLayerCount are allowed (required "+(layerIndex+1)+")");
+							Debug.LogError("Too many layers, a maximum of LevelGridNode.MaxLayerCount are allowed (required "+(layerIndex+1)+")");
 							return addedNodes;
 						}
 
-						AddLayers (1);
+						AddLayers(1);
 						addedNodes = true;
 					}
 
@@ -658,22 +645,22 @@ namespace Pathfinding {
 #if ASTAR_SET_LEVELGRIDNODE_HEIGHT
 					node.height = lln.height;
 #endif
-					node.SetPosition ((Int3)lln.position);
+					node.SetPosition((Int3)lln.position);
 					node.Walkable = lln.walkable;
 					node.WalkableErosion = node.Walkable;
 
 					//Adjust penalty based on the surface slope
 					if (lln.hit.normal != Vector3.zero) {
 						//Take the dot product to find out the cosinus of the angle it has (faster than Vector3.Angle)
-						float angle = Vector3.Dot (lln.hit.normal.normalized,collision.up);
+						float angle = Vector3.Dot(lln.hit.normal.normalized, collision.up);
 
 						//Add penalty based on normal
 						if (penaltyAngle) {
-							node.Penalty += (uint)Mathf.RoundToInt ((1F-angle)*penaltyAngleFactor);
+							node.Penalty += (uint)Mathf.RoundToInt((1F-angle)*penaltyAngleFactor);
 						}
 
 						//Max slope in cosinus
-						float cosAngle = Mathf.Cos (maxSlope*Mathf.Deg2Rad);
+						float cosAngle = Mathf.Cos(maxSlope*Mathf.Deg2Rad);
 
 						//Check if the slope is flat enough to stand on
 						if (angle < cosAngle) {
@@ -691,7 +678,7 @@ namespace Pathfinding {
 					layerIndex++;
 				} while (lln != null);
 
-				for (;layerIndex<layerCount;layerIndex++) {
+				for (; layerIndex < layerCount; layerIndex++) {
 					nodes[z*width+x + width*depth*layerIndex] = null;
 				}
 
@@ -702,19 +689,19 @@ namespace Pathfinding {
 		}
 
 		/** Increases the capacity of the nodes array to hold more layers.
-		  * After this function has been called and new nodes have been set up, the AstarPath.DataUpdate function must be called.
-		  */
+		 * After this function has been called and new nodes have been set up, the AstarPath.DataUpdate function must be called.
+		 */
 		public void AddLayers (int count) {
 			int newLayerCount = layerCount + count;
 
 			if (newLayerCount > LevelGridNode.MaxLayerCount) {
-				Debug.LogError ("Too many layers, a maximum of LevelGridNode.MaxLayerCount are allowed (required "+newLayerCount+")");
+				Debug.LogError("Too many layers, a maximum of LevelGridNode.MaxLayerCount are allowed (required "+newLayerCount+")");
 				return;
 			}
 
 			LevelGridNode[] tmp = nodes;
 			nodes = new LevelGridNode[width*depth*newLayerCount];
-			for (int i=0;i<tmp.Length;i++) nodes[i] = tmp[i];
+			for (int i = 0; i < tmp.Length; i++) nodes[i] = tmp[i];
 			layerCount = newLayerCount;
 		}
 
@@ -722,30 +709,29 @@ namespace Pathfinding {
 		 * This function sets penalty to zero (0) and then adjusts it if #penaltyPosition is set to true.
 		 */
 		public virtual void UpdatePenalty (LevelGridNode node) {
-
 			node.Penalty = 0;//Mathf.RoundToInt (Random.value*100);
 			node.Penalty = initialPenalty;
 
 			if (penaltyPosition) {
-				node.Penalty += (uint)Mathf.RoundToInt ((node.position.y-penaltyPositionOffset)*penaltyPositionFactor);
+				node.Penalty += (uint)Mathf.RoundToInt((node.position.y-penaltyPositionOffset)*penaltyPositionFactor);
 			}
 		}
 
 		/** Erodes the walkable area. \see #erodeIterations */
 		public override void ErodeWalkableArea (int xmin, int zmin, int xmax, int zmax) {
 			// Clamp values to grid
-			xmin = Mathf.Clamp (xmin, 0, Width);
-			xmax = Mathf.Clamp (xmax, 0, Width);
-			zmin = Mathf.Clamp (zmin, 0, Depth);
-			zmax = Mathf.Clamp (zmax, 0, Depth);
+			xmin = Mathf.Clamp(xmin, 0, Width);
+			xmax = Mathf.Clamp(xmax, 0, Width);
+			zmin = Mathf.Clamp(zmin, 0, Depth);
+			zmax = Mathf.Clamp(zmax, 0, Depth);
 
 			if (erosionUseTags) {
-				Debug.LogError ("Erosion Uses Tags is not supported for LayerGridGraphs yet");
+				Debug.LogError("Erosion Uses Tags is not supported for LayerGridGraphs yet");
 			}
 
 			for (int it = 0; it < erodeIterations; it++) {
 				for (int l = 0; l < layerCount; l++) {
-					for (int z = zmin; z < zmax; z ++) {
+					for (int z = zmin; z < zmax; z++) {
 						for (int x = xmin; x < xmax; x++) {
 							var node = nodes[z*width+x + width*depth*l];
 							if (node == null) continue;
@@ -755,7 +741,7 @@ namespace Pathfinding {
 
 								// Check all four axis aligned connections
 								for (int i = 0; i < 4; i++) {
-									if (!node.GetConnection (i)) {
+									if (!node.GetConnection(i)) {
 										anyFalseConnections = true;
 										break;
 									}
@@ -771,23 +757,23 @@ namespace Pathfinding {
 
 				// Recalculate connections
 				for (int l = 0; l < layerCount; l++) {
-					for (int z = zmin; z < zmax; z ++) {
+					for (int z = zmin; z < zmax; z++) {
 						for (int x = xmin; x < xmax; x++) {
 							LevelGridNode node = nodes[z*width+x + width*depth*l];
 							if (node == null) continue;
-							CalculateConnections (nodes,node,x,z,l);
+							CalculateConnections(nodes, node, x, z, l);
 						}
 					}
 				}
 			}
 		}
 
+		/** Calculates the layered grid graph connections for a single node */
 		public void CalculateConnections (GraphNode[] nodes, GraphNode node, int x, int z, int layerIndex) {
-
 			if (node == null) return;
 
 			var lgn = (LevelGridNode)node;
-			lgn.ResetAllGridConnections ();
+			lgn.ResetAllGridConnections();
 
 			if (!node.Walkable) {
 				return;
@@ -797,11 +783,10 @@ namespace Pathfinding {
 			if (layerIndex == layerCount-1 || nodes[lgn.NodeInGridIndex + width*depth*(layerIndex+1)] == null) {
 				height = float.PositiveInfinity;
 			} else {
-				height = System.Math.Abs (lgn.position.y - nodes[lgn.NodeInGridIndex+width*depth*(layerIndex+1)].position.y)*Int3.PrecisionFactor;
+				height = System.Math.Abs(lgn.position.y - nodes[lgn.NodeInGridIndex+width*depth*(layerIndex+1)].position.y)*Int3.PrecisionFactor;
 			}
 
-			for (int dir=0;dir<4;dir++) {
-
+			for (int dir = 0; dir < 4; dir++) {
 				int nx = x + neighbourXOffsets[dir];
 				int nz = z + neighbourZOffsets[dir];
 
@@ -814,50 +799,47 @@ namespace Pathfinding {
 				int nIndex = nz*width+nx;
 				int conn = LevelGridNode.NoConnection;
 
-				for (int i=0;i<layerCount;i++) {
+				for (int i = 0; i < layerCount; i++) {
 					GraphNode other = nodes[nIndex + width*depth*i];
 					if (other != null && other.Walkable) {
-
 						float otherHeight;
 
 						//Is there a node above this one
 						if (i == layerCount-1 || nodes[nIndex+width*depth*(i+1)] == null) {
 							otherHeight = float.PositiveInfinity;
 						} else {
-							otherHeight = System.Math.Abs (other.position.y - nodes[nIndex+width*depth*(i+1)].position.y)*Int3.PrecisionFactor;
+							otherHeight = System.Math.Abs(other.position.y - nodes[nIndex+width*depth*(i+1)].position.y)*Int3.PrecisionFactor;
 						}
 
-						float bottom = Mathf.Max (other.position.y*Int3.PrecisionFactor,lgn.position.y*Int3.PrecisionFactor);
-						float top = Mathf.Min (other.position.y*Int3.PrecisionFactor+otherHeight,lgn.position.y*Int3.PrecisionFactor+height);
+						float bottom = Mathf.Max(other.position.y*Int3.PrecisionFactor, lgn.position.y*Int3.PrecisionFactor);
+						float top = Mathf.Min(other.position.y*Int3.PrecisionFactor+otherHeight, lgn.position.y*Int3.PrecisionFactor+height);
 
 						float dist = top-bottom;
 
-						if (dist >= characterHeight && Mathf.Abs (other.position.y-lgn.position.y)*Int3.PrecisionFactor <= maxClimb) {
+						if (dist >= characterHeight && Mathf.Abs(other.position.y-lgn.position.y)*Int3.PrecisionFactor <= maxClimb) {
 							//Debug.DrawLine (lgn.position,other.position,new Color (0,1,0,0.5F));
 							conn = i;
 						}
 					}
 				}
 
-				lgn.SetConnectionValue (dir,conn);
+				lgn.SetConnectionValue(dir, conn);
 			}
-
 		}
 
 
 		public override NNInfo GetNearest (Vector3 position, NNConstraint constraint, GraphNode hint) {
-
 			if (nodes == null || depth*width*layerCount != nodes.Length) {
 				//Debug.LogError ("NavGraph hasn't been generated yet");
-				return new NNInfo ();
+				return new NNInfo();
 			}
 
-			var graphPosition = inverseMatrix.MultiplyPoint3x4 (position);
+			var graphPosition = inverseMatrix.MultiplyPoint3x4(position);
 
-			int x = Mathf.Clamp (Mathf.RoundToInt (graphPosition.x-0.5F)  , 0, width-1);
-			int z = Mathf.Clamp (Mathf.RoundToInt (graphPosition.z-0.5F)  , 0, depth-1);
+			int x = Mathf.Clamp(Mathf.RoundToInt(graphPosition.x-0.5F), 0, width-1);
+			int z = Mathf.Clamp(Mathf.RoundToInt(graphPosition.z-0.5F), 0, depth-1);
 
-			var minNode = GetNearestNode (position, x, z, null);
+			var minNode = GetNearestNode(position, x, z, null);
 			return new NNInfo(minNode);
 		}
 
@@ -865,11 +847,12 @@ namespace Pathfinding {
 			int index = width*z+x;
 			float minDist = float.PositiveInfinity;
 			LevelGridNode minNode = null;
-			for (int i=0;i<layerCount;i++) {
+
+			for (int i = 0; i < layerCount; i++) {
 				LevelGridNode node = nodes[index + width*depth*i];
 				if (node != null) {
 					float dist =  ((Vector3)node.position - position).sqrMagnitude;
-					if (dist < minDist && (constraint == null || constraint.Suitable (node))) {
+					if (dist < minDist && (constraint == null || constraint.Suitable(node))) {
 						minDist = dist;
 						minNode = node;
 					}
@@ -879,23 +862,22 @@ namespace Pathfinding {
 		}
 
 		public override NNInfo GetNearestForce (Vector3 position, NNConstraint constraint) {
-
 			if (nodes == null || depth*width*layerCount != nodes.Length || layerCount == 0) {
-				return new NNInfo ();
+				return new NNInfo();
 			}
 
 			Vector3 globalPosition = position;
 
-			position = inverseMatrix.MultiplyPoint3x4 (position);
+			position = inverseMatrix.MultiplyPoint3x4(position);
 
-			int x = Mathf.Clamp (Mathf.RoundToInt (position.x-0.5F), 0, width-1);
-			int z = Mathf.Clamp (Mathf.RoundToInt (position.z-0.5F), 0, depth-1);
+			int x = Mathf.Clamp(Mathf.RoundToInt(position.x-0.5F), 0, width-1);
+			int z = Mathf.Clamp(Mathf.RoundToInt(position.z-0.5F), 0, depth-1);
 
 			LevelGridNode minNode;
 			float minDist = float.PositiveInfinity;
 			int overlap = getNearestForceOverlap;
 
-			minNode = GetNearestNode (globalPosition,x,z,constraint);
+			minNode = GetNearestNode(globalPosition, x, z, constraint);
 			if (minNode != null) {
 				minDist = ((Vector3)minNode.position-globalPosition).sqrMagnitude;
 			}
@@ -909,7 +891,7 @@ namespace Pathfinding {
 			float maxDist = constraint.constrainDistance ? AstarPath.active.maxNearestNodeDistance : float.PositiveInfinity;
 			float maxDistSqr = maxDist*maxDist;
 
-			for (int w = 1;;w++) {
+			for (int w = 1;; w++) {
 				int nx;
 				int nz = z+w;
 
@@ -918,9 +900,9 @@ namespace Pathfinding {
 					return new NNInfo(minNode);
 				}
 
-				for (nx = x-w;nx <= x+w;nx++) {
+				for (nx = x-w; nx <= x+w; nx++) {
 					if (nx < 0 || nz < 0 || nx >= width || nz >= depth) continue;
-					LevelGridNode node = GetNearestNode (globalPosition, nx,nz, constraint);
+					LevelGridNode node = GetNearestNode(globalPosition, nx, nz, constraint);
 					if (node != null) {
 						float dist = ((Vector3)node.position-globalPosition).sqrMagnitude;
 						//Debug.DrawRay (nodes[nx+nz*width].position,Vector3.up*dist,Color.cyan);counter++;
@@ -930,9 +912,9 @@ namespace Pathfinding {
 
 				nz = z-w;
 
-				for (nx = x-w;nx <= x+w;nx++) {
+				for (nx = x-w; nx <= x+w; nx++) {
 					if (nx < 0 || nz < 0 || nx >= width || nz >= depth) continue;
-					LevelGridNode node = GetNearestNode (globalPosition, nx,nz, constraint);
+					LevelGridNode node = GetNearestNode(globalPosition, nx, nz, constraint);
 					if (node != null) {
 						float dist = ((Vector3)node.position-globalPosition).sqrMagnitude;
 						//Debug.DrawRay (nodes[nx+nz*width].position,Vector3.up*dist,Color.cyan);counter++;
@@ -942,9 +924,9 @@ namespace Pathfinding {
 
 				nx = x-w;
 
-				for (nz = z-w+1;nz <= z+w-1; nz++) {
+				for (nz = z-w+1; nz <= z+w-1; nz++) {
 					if (nx < 0 || nz < 0 || nx >= width || nz >= depth) continue;
-					LevelGridNode node = GetNearestNode (globalPosition, nx,nz, constraint);
+					LevelGridNode node = GetNearestNode(globalPosition, nx, nz, constraint);
 					if (node != null) {
 						float dist = ((Vector3)node.position-globalPosition).sqrMagnitude;
 						//Debug.DrawRay (nodes[nx+nz*width].position,Vector3.up*dist,Color.cyan);counter++;
@@ -954,9 +936,9 @@ namespace Pathfinding {
 
 				nx = x+w;
 
-				for (nz = z-w+1;nz <= z+w-1; nz++) {
+				for (nz = z-w+1; nz <= z+w-1; nz++) {
 					if (nx < 0 || nz < 0 || nx >= width || nz >= depth) continue;
-					LevelGridNode node = GetNearestNode (globalPosition, nx,nz, constraint);
+					LevelGridNode node = GetNearestNode(globalPosition, nx, nz, constraint);
 					if (node != null) {
 						float dist = ((Vector3)node.position-globalPosition).sqrMagnitude;
 						//Debug.DrawRay (nodes[nx+nz*width].position,Vector3.up*dist,Color.cyan);counter++;
@@ -979,6 +961,7 @@ namespace Pathfinding {
 		 */
 		protected override GridNodeBase GetNeighbourAlongDirection (GridNodeBase node, int direction) {
 			var levelGridNode = node as LevelGridNode;
+
 			if (levelGridNode.GetConnection(direction)) {
 				return nodes[levelGridNode.NodeInGridIndex+neighbourOffsets[direction] + width*depth*levelGridNode.GetConnectionValue(direction)];
 			}
@@ -987,16 +970,15 @@ namespace Pathfinding {
 
 		/** Returns if \a node is connected to it's neighbour in the specified direction */
 		public static bool CheckConnection (LevelGridNode node, int dir) {
-			return node.GetConnection (dir);
+			return node.GetConnection(dir);
 		}
 
 		public override void OnDrawGizmos (bool drawNodes) {
-
 			if (!drawNodes) {
 				return;
 			}
 
-			base.OnDrawGizmos (false);
+			base.OnDrawGizmos(false);
 
 			if (nodes == null) {
 				return;
@@ -1004,26 +986,24 @@ namespace Pathfinding {
 
 			PathHandler debugData = AstarPath.active.debugPathData;
 
-			for (int n=0;n<nodes.Length;n++) {
-
+			for (int n = 0; n < nodes.Length; n++) {
 				var node = nodes[n];
 
 				if (node == null || !node.Walkable) continue;
 
-				Gizmos.color = NodeColor (node,AstarPath.active.debugPathData);
+				Gizmos.color = NodeColor(node, AstarPath.active.debugPathData);
 
 				if (AstarPath.active.showSearchTree && AstarPath.active.debugPathData != null) {
-					if (InSearchTree(node,AstarPath.active.debugPath)) {
-						PathNode nodeR = debugData.GetPathNode (node);
+					if (InSearchTree(node, AstarPath.active.debugPath)) {
+						PathNode nodeR = debugData.GetPathNode(node);
 						if (nodeR != null && nodeR.parent != null) {
-							Gizmos.DrawLine ((Vector3)node.position, (Vector3)nodeR.parent.node.position);
+							Gizmos.DrawLine((Vector3)node.position, (Vector3)nodeR.parent.node.position);
 						}
 					}
 				} else {
-					for (int i=0;i<4;i++) {
+					for (int i = 0; i < 4; i++) {
 						int conn = node.GetConnectionValue(i);//(node.gridConnections >> i*4) & 0xF;
 						if (conn != LevelGridNode.NoConnection) {
-
 							int nIndex = node.NodeInGridIndex + neighbourOffsets[i] + width*depth*conn;
 
 							if (nIndex < 0 || nIndex >= nodes.Length) {
@@ -1034,23 +1014,22 @@ namespace Pathfinding {
 
 							if (other == null) continue;
 
-							Gizmos.DrawLine ((Vector3)node.position,(Vector3)other.position);
+							Gizmos.DrawLine((Vector3)node.position, (Vector3)other.position);
 						}
 					}
 				}
 			}
 		}
 
-		public override void SerializeExtraInfo (GraphSerializationContext ctx)
-		{
+		public override void SerializeExtraInfo (GraphSerializationContext ctx) {
 			if (nodes == null) {
 				ctx.writer.Write(-1);
 				return;
 			}
 
-			ctx.writer.Write (nodes.Length);
+			ctx.writer.Write(nodes.Length);
 
-			for (int i=0;i<nodes.Length;i++) {
+			for (int i = 0; i < nodes.Length; i++) {
 				if (nodes[i] == null) {
 					ctx.writer.Write(-1);
 				} else {
@@ -1060,19 +1039,18 @@ namespace Pathfinding {
 			}
 		}
 
-		public override void DeserializeExtraInfo (GraphSerializationContext ctx)
-		{
-
+		public override void DeserializeExtraInfo (GraphSerializationContext ctx) {
 			int count = ctx.reader.ReadInt32();
+
 			if (count == -1) {
 				nodes = null;
 				return;
 			}
 
 			nodes = new LevelGridNode[count];
-			for (int i=0;i<nodes.Length;i++) {
-				if (ctx.reader.ReadInt32() != -1 ){
-					nodes[i] = new LevelGridNode (active);
+			for (int i = 0; i < nodes.Length; i++) {
+				if (ctx.reader.ReadInt32() != -1) {
+					nodes[i] = new LevelGridNode(active);
 					nodes[i].DeserializeNode(ctx);
 				} else {
 					nodes[i] = null;
@@ -1081,25 +1059,24 @@ namespace Pathfinding {
 		}
 
 		public override void PostDeserialization () {
-
 #if ASTARDEBUG
-			Debug.Log ("Grid Graph - Post Deserialize");
+			Debug.Log("Grid Graph - Post Deserialize");
 #endif
 
-			GenerateMatrix ();
+			GenerateMatrix();
 
 			lastScannedWidth = width;
 			lastScannedDepth = depth;
 
-			SetUpOffsetsAndCosts ();
+			SetUpOffsetsAndCosts();
 
 			if (nodes == null || nodes.Length == 0) return;
 
-			LevelGridNode.SetGridGraph (AstarPath.active.astarData.GetGraphIndex(this),this);
+			LevelGridNode.SetGridGraph(AstarPath.active.astarData.GetGraphIndex(this), this);
 
-			for (int z = 0; z < depth; z ++) {
+			for (int z = 0; z < depth; z++) {
 				for (int x = 0; x < width; x++) {
-					for (int i=0;i<layerCount;i++) {
+					for (int i = 0; i < layerCount; i++) {
 						LevelGridNode node = nodes[z*width+x + width*depth*i];
 
 						if (node == null) {
@@ -1111,17 +1088,17 @@ namespace Pathfinding {
 				}
 			}
 		}
-
 	}
 
+	/** Internal class used by the LayerGridGraph */
 	public class LinkedLevelCell {
 		public int count;
 		public int index;
 
 		public LinkedLevelNode first;
-
 	}
 
+	/** Internal class used by the LayerGridGraph */
 	public class LinkedLevelNode {
 		public Vector3 position;
 		public bool walkable;
@@ -1131,17 +1108,10 @@ namespace Pathfinding {
 	}
 
 	/** Describes a single node for the LayeredGridGraph.
-	  * Works almost the same as a grid node, except that it also stores to which layer the connections go to
-	  */
+	 * Works almost the same as a grid node, except that it also stores to which layer the connections go to
+	 */
 	public class LevelGridNode : GridNodeBase {
-
-		const int GridFlagsWalkableErosionOffset = 8;
-		const int GridFlagsWalkableErosionMask = 1 << GridFlagsWalkableErosionOffset;
-
-		const int GridFlagsWalkableTmpOffset = 9;
-		const int GridFlagsWalkableTmpMask = 1 << GridFlagsWalkableTmpOffset;
-
-		public LevelGridNode (AstarPath astar) : base (astar) {
+		public LevelGridNode (AstarPath astar) : base(astar) {
 		}
 
 		private static LayerGridGraph[] _gridGraphs = new LayerGridGraph[0];
@@ -1150,14 +1120,12 @@ namespace Pathfinding {
 		public static void SetGridGraph (int graphIndex, LayerGridGraph graph) {
 			if (_gridGraphs.Length <= graphIndex) {
 				var gg = new LayerGridGraph[graphIndex+1];
-				for (int i=0;i<_gridGraphs.Length;i++) gg[i] = _gridGraphs[i];
+				for (int i = 0; i < _gridGraphs.Length; i++) gg[i] = _gridGraphs[i];
 				_gridGraphs = gg;
 			}
 
 			_gridGraphs[graphIndex] = graph;
 		}
-
-		protected ushort gridFlags;
 
 #if ASTAR_LEVELGRIDNODE_FEW_LAYERS
 		protected ushort gridConnections;
@@ -1193,30 +1161,6 @@ namespace Pathfinding {
 			}
 		}
 
-		/*public override Int3 Position {
-			get {
-				return position;
-			}
-		}*/
-
-		public bool WalkableErosion {
-			get {
-				return (gridFlags & GridFlagsWalkableErosionMask) != 0;
-			}
-			set {
-				unchecked { gridFlags = (ushort)(gridFlags & ~GridFlagsWalkableErosionMask | (value ? (ushort)GridFlagsWalkableErosionMask : (ushort)0)); }
-			}
-		}
-
-		public bool TmpWalkable {
-			get {
-				return (gridFlags & GridFlagsWalkableTmpMask) != 0;
-			}
-			set {
-				unchecked { gridFlags = (ushort)(gridFlags & ~GridFlagsWalkableTmpMask | (value ? (ushort)GridFlagsWalkableTmpMask : (ushort)0)); }
-			}
-		}
-
 		/** Does this node have any grid connections */
 		public bool HasAnyGridConnections () {
 			unchecked {
@@ -1234,69 +1178,72 @@ namespace Pathfinding {
 
 		public override void ClearConnections (bool alsoReverse) {
 			if (alsoReverse) {
-				LayerGridGraph graph = GetGridGraph (GraphIndex);
+				LayerGridGraph graph = GetGridGraph(GraphIndex);
 				int[] neighbourOffsets = graph.neighbourOffsets;
 				LevelGridNode[] nodes = graph.nodes;
 
-				for (int i=0;i<4;i++) {
-					int conn = GetConnectionValue(i);//(gridConnections >> i*4) & 0xF;
+				for (int i = 0; i < 4; i++) {
+					int conn = GetConnectionValue(i);
 					if (conn != LevelGridNode.NoConnection) {
 						LevelGridNode other = nodes[NodeInGridIndex+neighbourOffsets[i] + graph.lastScannedWidth*graph.lastScannedDepth*conn];
 						if (other != null) {
-							//Remove reverse connection
-							/** \todo Check if correct */
-							other.SetConnectionValue(i < 4 ? ((i + 2) % 4) : (((5-2) % 4) + 4),NoConnection);
+							// Remove reverse connection
+							other.SetConnectionValue((i + 2) % 4, NoConnection);
 						}
 					}
 				}
-
 			}
 
-			ResetAllGridConnections ();
+			ResetAllGridConnections();
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
+			base.ClearConnections(alsoReverse);
+#endif
 		}
 
-		public override void GetConnections (GraphNodeDelegate del)
-		{
+		public override void GetConnections (GraphNodeDelegate del) {
 			int index = NodeInGridIndex;
 
-			LayerGridGraph graph = GetGridGraph (GraphIndex);
+			LayerGridGraph graph = GetGridGraph(GraphIndex);
+
 			int[] neighbourOffsets = graph.neighbourOffsets;
 			LevelGridNode[] nodes = graph.nodes;
 
-			for (int i=0;i<4;i++) {
-				int conn = GetConnectionValue(i);//(gridConnections >> i*4) & 0xF;
+			for (int i = 0; i < 4; i++) {
+				int conn = GetConnectionValue(i);
 				if (conn != LevelGridNode.NoConnection) {
 					LevelGridNode other = nodes[index+neighbourOffsets[i] + graph.lastScannedWidth*graph.lastScannedDepth*conn];
-					if (other != null) del (other);
+					if (other != null) del(other);
 				}
 			}
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
+			base.GetConnections(del);
+#endif
 		}
 
 		public override void FloodFill (Stack<GraphNode> stack, uint region) {
 			int index = NodeInGridIndex;
 
-			LayerGridGraph graph = GetGridGraph (GraphIndex);
+			LayerGridGraph graph = GetGridGraph(GraphIndex);
+
 			int[] neighbourOffsets = graph.neighbourOffsets;
 			LevelGridNode[] nodes = graph.nodes;
 
-			for (int i=0;i<4;i++) {
-				int conn = GetConnectionValue(i);//(gridConnections >> i*4) & 0xF;
+			for (int i = 0; i < 4; i++) {
+				int conn = GetConnectionValue(i);
 				if (conn != LevelGridNode.NoConnection) {
 					LevelGridNode other = nodes[index+neighbourOffsets[i] + graph.lastScannedWidth*graph.lastScannedDepth*conn];
 					if (other != null && other.Area != region) {
 						other.Area = region;
-						stack.Push (other);
+						stack.Push(other);
 					}
 				}
 			}
-		}
 
-		public override void AddConnection (GraphNode node, uint cost) {
-			throw new System.NotImplementedException("Layered Grid Nodes do not have support for adding manual connections");
-		}
-
-		public override void RemoveConnection (GraphNode node) {
-			throw new System.NotImplementedException("Layered Grid Nodes do not have support for adding manual connections");
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
+			base.FloodFill(stack, region);
+#endif
 		}
 
 		/** Is there a grid connection in that direction */
@@ -1324,25 +1271,24 @@ namespace Pathfinding {
 			return (int)((gridConnections >> dir*ConnectionStride) & ConnectionMask);
 		}
 
-		public override bool GetPortal (GraphNode other, List<Vector3> left, List<Vector3> right, bool backwards)
-		{
+		public override bool GetPortal (GraphNode other, List<Vector3> left, List<Vector3> right, bool backwards) {
 			if (backwards) return true;
 
-			LayerGridGraph graph = GetGridGraph (GraphIndex);
+			LayerGridGraph graph = GetGridGraph(GraphIndex);
 			int[] neighbourOffsets = graph.neighbourOffsets;
 			LevelGridNode[] nodes = graph.nodes;
 			int index = NodeInGridIndex;
 
-			for (int i=0;i<4;i++) {
-				int conn = GetConnectionValue(i);//(gridConnections >> i*4) & 0xF;
+			for (int i = 0; i < 4; i++) {
+				int conn = GetConnectionValue(i);
 				if (conn != LevelGridNode.NoConnection) {
 					if (other == nodes[index+neighbourOffsets[i] + graph.lastScannedWidth*graph.lastScannedDepth*conn]) {
 						Vector3 middle = ((Vector3)(position + other.position))*0.5f;
-						Vector3 cross = Vector3.Cross (graph.collision.up, (Vector3)(other.position-position));
+						Vector3 cross = Vector3.Cross(graph.collision.up, (Vector3)(other.position-position));
 						cross.Normalize();
 						cross *= graph.nodeSize*0.5f;
-						left.Add (middle - cross);
-						right.Add (middle + cross);
+						left.Add(middle - cross);
+						right.Add(middle + cross);
 						return true;
 					}
 				}
@@ -1352,52 +1298,50 @@ namespace Pathfinding {
 		}
 
 		public override void UpdateRecursiveG (Path path, PathNode pathNode, PathHandler handler) {
-			//BaseUpdateAllG (nodeR, nodeRunData);
+			handler.PushNode(pathNode);
+			UpdateG(path, pathNode);
 
-			handler.PushNode (pathNode);
-			UpdateG (path, pathNode);
-
-			LayerGridGraph graph = GetGridGraph (GraphIndex);
+			LayerGridGraph graph = GetGridGraph(GraphIndex);
 			int[] neighbourOffsets = graph.neighbourOffsets;
 			LevelGridNode[] nodes = graph.nodes;
 			int index = NodeInGridIndex;
 
-			for (int i=0;i<4;i++) {
-				int conn = GetConnectionValue(i);//(gridConnections >> i*4) & 0xF;
+			for (int i = 0; i < 4; i++) {
+				int conn = GetConnectionValue(i);
 				if (conn != LevelGridNode.NoConnection) {
-
 					LevelGridNode other = nodes[index+neighbourOffsets[i] + graph.lastScannedWidth*graph.lastScannedDepth*conn];
-					PathNode otherPN = handler.GetPathNode (other);
+					PathNode otherPN = handler.GetPathNode(other);
 
 					if (otherPN != null && otherPN.parent == pathNode && otherPN.pathID == handler.PathID) {
-						other.UpdateRecursiveG (path, otherPN,handler);
+						other.UpdateRecursiveG(path, otherPN, handler);
 					}
 				}
 			}
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
+			base.UpdateRecursiveG(path, pathNode, handler);
+#endif
 		}
 
 		public override void Open (Path path, PathNode pathNode, PathHandler handler) {
-
-			//BaseOpen (nodeRunData, nodeR, targetPosition, path);
-
 			LayerGridGraph graph = GetGridGraph(GraphIndex);
+
 			int[] neighbourOffsets = graph.neighbourOffsets;
 			uint[] neighbourCosts = graph.neighbourCosts;
 			LevelGridNode[] nodes = graph.nodes;
 
-			int index = NodeInGridIndex;//indices & 0xFFFFFF;
+			int index = NodeInGridIndex;
 
-			for (int i=0;i<4;i++) {
-				int conn = GetConnectionValue(i);//(gridConnections >> i*4) & 0xF;
+			for (int i = 0; i < 4; i++) {
+				int conn = GetConnectionValue(i);
 				if (conn != LevelGridNode.NoConnection) {
-
 					GraphNode other = nodes[index+neighbourOffsets[i] + graph.lastScannedWidth*graph.lastScannedDepth*conn];
 
-					if (!path.CanTraverse (other)) {
+					if (!path.CanTraverse(other)) {
 						continue;
 					}
 
-					PathNode otherPN = handler.GetPathNode (other);
+					PathNode otherPN = handler.GetPathNode(other);
 
 					if (otherPN.pathID != handler.PathID) {
 						otherPN.parent = pathNode;
@@ -1405,26 +1349,33 @@ namespace Pathfinding {
 
 						otherPN.cost = neighbourCosts[i];
 
-						otherPN.H = path.CalculateHScore (other);
-						other.UpdateG (path, otherPN);
+						otherPN.H = path.CalculateHScore(other);
+						other.UpdateG(path, otherPN);
 
-						handler.PushNode (otherPN);
-
+						handler.PushNode(otherPN);
 					} else {
 						//If not we can test if the path from the current node to this one is a better one then the one already used
 						uint tmpCost = neighbourCosts[i];
 
-						if (pathNode.G+tmpCost+path.GetTraversalCost(other) < otherPN.G) {
-							//Debug.Log ("Path better from " + NodeIndex + " to " + otherPN.node.NodeIndex + " " + (pathNode.G+tmpCost+path.GetTraversalCost(other)) + " < " + otherPN.G);
+#if ASTAR_NO_TRAVERSAL_COST
+						if (pathNode.G + tmpCost < otherPN.G)
+#else
+						if (pathNode.G + tmpCost + path.GetTraversalCost(other) < otherPN.G)
+#endif
+						{
 							otherPN.cost = tmpCost;
 
 							otherPN.parent = pathNode;
 
-							other.UpdateRecursiveG (path,otherPN, handler);
-
+							other.UpdateRecursiveG(path, otherPN, handler);
+						}
 						//Or if the path from this node ("other") to the current ("current") is better
-						} else if (otherPN.G+tmpCost+path.GetTraversalCost (this) < pathNode.G) {
-							//Debug.Log ("Path better from " + otherPN.node.NodeIndex + " to " + NodeIndex + " " + (otherPN.G+tmpCost+path.GetTraversalCost (this)) + " < " + pathNode.G);
+#if ASTAR_NO_TRAVERSAL_COST
+						else if (otherPN.G+tmpCost < pathNode.G)
+#else
+						else if (otherPN.G+tmpCost+path.GetTraversalCost(this) < pathNode.G)
+#endif
+						{
 							pathNode.parent = otherPN;
 							pathNode.cost = tmpCost;
 
@@ -1433,21 +1384,22 @@ namespace Pathfinding {
 					}
 				}
 			}
+
+#if !ASTAR_GRID_NO_CUSTOM_CONNECTIONS
+			base.Open(path, pathNode, handler);
+#endif
 		}
 
 		public override void SerializeNode (GraphSerializationContext ctx) {
-			base.SerializeNode (ctx);
-			ctx.writer.Write (position.x);
-			ctx.writer.Write (position.y);
-			ctx.writer.Write (position.z);
-			ctx.writer.Write (gridFlags);
-			ctx.writer.Write (gridConnections);
+			base.SerializeNode(ctx);
+			ctx.SerializeInt3(position);
+			ctx.writer.Write(gridFlags);
+			ctx.writer.Write(gridConnections);
 		}
 
-		public override void DeserializeNode (GraphSerializationContext ctx)
-		{
-			base.DeserializeNode (ctx);
-			position = new Int3(ctx.reader.ReadInt32(), ctx.reader.ReadInt32(), ctx.reader.ReadInt32());
+		public override void DeserializeNode (GraphSerializationContext ctx) {
+			base.DeserializeNode(ctx);
+			position = ctx.DeserializeInt3();
 			gridFlags = ctx.reader.ReadUInt16();
 #if ASTAR_LEVELGRIDNODE_FEW_LAYERS
 			gridConnections = ctx.reader.ReadUInt16();
@@ -1467,7 +1419,6 @@ namespace Pathfinding {
 
 		/** If true, nodes will be reused. This can be used to preserve e.g penalty values when recalculating */
 		public bool preserveExistingNodes = true;
-
 	}
 }
 #endif

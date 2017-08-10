@@ -2,18 +2,17 @@ using UnityEngine;
 using System.Collections;
 
 namespace Pathfinding.RVO {
-	
 	/** One vertex in an obstacle.
-	  * This is a linked list and one vertex can therefore be used to reference the whole obstacle
-	  * \astarpro 
-	  */
+	 * This is a linked list and one vertex can therefore be used to reference the whole obstacle
+	 * \astarpro
+	 */
 	public class ObstacleVertex {
 		public bool ignore;
 
 		/** Position of the vertex */
 		public Vector3 position;
 		public Vector2 dir;
-		
+
 		/** Height of the obstacle in this vertex */
 		public float height;
 

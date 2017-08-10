@@ -2,51 +2,51 @@ using UnityEngine;
 using UnityEditor;
 using Pathfinding;
 
-[CustomEditor(typeof(RaycastModifier))]
-public class RaycastModifierEditor : Editor {
+namespace Pathfinding {
+	[CustomEditor(typeof(RaycastModifier))]
+	[CanEditMultipleObjects]
+	public class RaycastModifierEditor : Editor {
+		SerializedProperty iterations, useRaycasting, thickRaycast, thickRaycastRadius, raycastOffset, useGraphRaycasting, subdivideEveryIter, mask;
 
-	public override void OnInspectorGUI () {
-		DrawDefaultInspector ();
-		var ob = target as RaycastModifier;
+		void OnEnable () {
+			iterations = serializedObject.FindProperty("iterations");
+			useRaycasting = serializedObject.FindProperty("useRaycasting");
+			thickRaycast = serializedObject.FindProperty("thickRaycast");
+			thickRaycastRadius = serializedObject.FindProperty("thickRaycastRadius");
+			raycastOffset = serializedObject.FindProperty("raycastOffset");
+			useGraphRaycasting = serializedObject.FindProperty("useGraphRaycasting");
+			subdivideEveryIter = serializedObject.FindProperty("subdivideEveryIter");
+			mask = serializedObject.FindProperty("mask");
+		}
 
-		EditorGUI.indentLevel = 0;
-		Undo.RecordObject (ob, "modify settings on Raycast Modifier");
+		public override void OnInspectorGUI () {
+			EditorGUI.indentLevel = 0;
 
-		if ( ob.iterations < 0 ) ob.iterations = 0;
+			EditorGUILayout.PropertyField(iterations);
+			if (iterations.intValue < 0 && !iterations.hasMultipleDifferentValues) iterations.intValue = 0;
 
-		ob.useRaycasting = EditorGUILayout.Toggle (new GUIContent ("Use Physics Raycasting"),ob.useRaycasting);
+			EditorGUILayout.PropertyField(useRaycasting);
 
-		if (ob.useRaycasting) {
-			EditorGUI.indentLevel++;
-			ob.thickRaycast = EditorGUILayout.Toggle (new GUIContent ("Use Thick Raycast", "Checks around the line between two points, not just the exact line.\n" +
-				"Make sure the ground is either too far below or is not inside the mask since otherwise the raycast might always hit the ground"), ob.thickRaycast);
-			if ( ob.thickRaycast ) {
+			if (useRaycasting.boolValue) {
 				EditorGUI.indentLevel++;
-				ob.thickRaycastRadius = EditorGUILayout.FloatField (new GUIContent ("Thick Raycast Radius"), ob.thickRaycastRadius);
-				if ( ob.thickRaycastRadius < 0 ) ob.thickRaycastRadius = 0;
+				EditorGUILayout.PropertyField(thickRaycast);
+
+				if (thickRaycast.boolValue) {
+					EditorGUI.indentLevel++;
+					EditorGUILayout.PropertyField(thickRaycastRadius);
+					if (thickRaycastRadius.floatValue < 0 && !thickRaycastRadius.hasMultipleDifferentValues) thickRaycastRadius.floatValue = 0;
+					EditorGUI.indentLevel--;
+				}
+
+				EditorGUILayout.PropertyField(raycastOffset);
+				EditorGUILayout.PropertyField(mask);
 				EditorGUI.indentLevel--;
 			}
 
-			ob.raycastOffset = EditorGUILayout.Vector3Field (new GUIContent ("Raycast Offset", "Offset from the original positions to perform the raycast.\n" +
-				"Can be useful to avoid the raycast intersecting the ground or similar things you do not want to it intersect."), ob.raycastOffset);
+			EditorGUILayout.PropertyField(useGraphRaycasting);
+			EditorGUILayout.PropertyField(subdivideEveryIter);
 
-			EditorGUILayout.PropertyField ( serializedObject.FindProperty("mask") );
-
-			EditorGUI.indentLevel--;
+			serializedObject.ApplyModifiedProperties();
 		}
-
-		ob.useGraphRaycasting = EditorGUILayout.Toggle (new GUIContent ("Use Graph Raycasting", "Raycasts on the graph to see if it hits any unwalkable nodes"), ob.useGraphRaycasting );
-
-		ob.subdivideEveryIter = EditorGUILayout.Toggle (new GUIContent ("Subdivide Every Iteration", "Subdivides the path every iteration to be able to find shorter paths"), ob.subdivideEveryIter );
-
-		Color preCol = GUI.color;
-		GUI.color *= new Color (1,1,1,0.5F);
-		ob.Priority = EditorGUILayout.IntField (new GUIContent ("Priority","Higher priority modifiers are executed first\nAdjust this in Seeker-->Modifier Priorities"),ob.Priority);
-		GUI.color = preCol;
-
-		if ( ob.gameObject.GetComponent<Seeker> () == null ) {
-			EditorGUILayout.HelpBox ("No seeker found, modifiers are usually used together with a Seeker component", MessageType.Warning );
-		}
-
 	}
 }

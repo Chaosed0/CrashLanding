@@ -38,6 +38,7 @@ public class GameRules : MonoBehaviour {
             skeletonSpawners[i].gameObject.SetActive(false);
         }
         shipPower = initialShipPower;
+        OnShipPowerChange(shipPower);
 	}
 
 	void Update () {

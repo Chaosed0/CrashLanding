@@ -8,7 +8,7 @@ public class Velocity : MonoBehaviour {
 	void Start () {
 	}
 
-	void Update () {
+	void FixedUpdate () {
         if (waitOneFrame) {
             waitOneFrame = false;
             return;

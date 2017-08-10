@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Pathfinding;
-using Pathfinding.Threading;
 using Pathfinding.Voxels;
 
 namespace Pathfinding.Voxels {
@@ -13,14 +12,13 @@ namespace Pathfinding.Voxels {
 	 * \astarpro
 	 */
 	public partial class Voxelize {
-
 		public List<ExtraMesh> inputExtraMeshes;
 
 		protected Vector3[] inputVertices;
 		protected int[] inputTriangles;
 
 		/* Minimum floor to 'ceiling' height that will still allow the floor area to
-		  * be considered walkable. [Limit: > 0] [Units: wu] */
+		 * be considered walkable. [Limit: > 0] [Units: wu] */
 		//public float walkableHeight = 0.8F;
 
 		/* Maximum ledge height that is considered to still be traversable. [Limit: >=0] [Units: wu] */
@@ -30,7 +28,7 @@ namespace Pathfinding.Voxels {
 		public readonly int voxelWalkableClimb;
 
 		/** Minimum floor to 'ceiling' height that will still allow the floor area to
-		  * be considered walkable. [Limit: >= 3] [Units: vx] */
+		 * be considered walkable. [Limit: >= 3] [Units: vx] */
 		public readonly uint voxelWalkableHeight;
 
 		/** The xz-plane cell size to use for fields. [Limit: > 0] [Units: wu] */
@@ -69,23 +67,23 @@ namespace Pathfinding.Voxels {
 		 */
 		public int depth;
 
-#region Debug
+		#region Debug
 
 		public Vector3 voxelOffset;
 
-		public Vector3 CompactSpanToVector(int x, int z, int i) {
-			return voxelOffset+new Vector3(x*cellSize,voxelArea.compactSpans[i].y*cellHeight,z*cellSize);
+		public Vector3 CompactSpanToVector (int x, int z, int i) {
+			return voxelOffset+new Vector3((x+0.5f)*cellSize, voxelArea.compactSpans[i].y*cellHeight, (z+0.5f)*cellSize);
 		}
 
-		public void VectorToIndex(Vector3 p, out int x, out int z) {
+		public void VectorToIndex (Vector3 p, out int x, out int z) {
 			p -= voxelOffset;
-			x = Mathf.RoundToInt (p.x / cellSize);
-			z = Mathf.RoundToInt (p.z / cellSize);
+			x = Mathf.RoundToInt((p.x / cellSize) - 0.5f);
+			z = Mathf.RoundToInt((p.z / cellSize) - 0.5f);
 		}
 
-#endregion
+		#endregion
 
-	#region Constants /** @name Constants @{ */
+		#region Constants /** @name Constants @{ */
 
 		public const uint NotConnected = 0x3f;
 
@@ -102,30 +100,28 @@ namespace Pathfinding.Voxels {
 		public const ushort BorderReg = 0x8000;
 
 		/** If contour region ID has the following bit set, the vertex will be later
-		 * removed in order to match the segments and vertices at tile boundaries. */
+		* removed in order to match the segments and vertices at tile boundaries. */
 		public const int RC_BORDER_VERTEX = 0x10000;
 
 		public const int RC_AREA_BORDER = 0x20000;
 
 		public const int VERTEX_BUCKET_COUNT = 1<<12;
 
-		public const int RC_CONTOUR_TESS_WALL_EDGES = 0x01;	// Tessellate wall edges
-		public const int RC_CONTOUR_TESS_AREA_EDGES = 0x02;	// Tessellate edges between areas.
+		public const int RC_CONTOUR_TESS_WALL_EDGES = 0x01; // Tessellate wall edges
+		public const int RC_CONTOUR_TESS_AREA_EDGES = 0x02; // Tessellate edges between areas.
 
 		/** Mask used with contours to extract region id. */
 		public const int ContourRegMask = 0xffff;
 
-#endregion /** @} */
+		#endregion /** @} */
 
 		public string debugString = "";
 
 
 
-	#if !PhotonImplementation
 		public void OnGUI () {
-			GUI.Label (new Rect (5,5,200,Screen.height),debugString);
+			GUI.Label(new Rect(5, 5, 200, Screen.height), debugString);
 		}
-	#endif
 
 		public readonly Vector3 cellScale;
 		public readonly Vector3 cellScaleDivision;
@@ -137,94 +133,98 @@ namespace Pathfinding.Voxels {
 			float walkableClimb = wc;
 			maxSlope = ms;
 
-			cellScale = new Vector3 (cellSize,cellHeight,cellSize);
-			cellScaleDivision = new Vector3 (1F/cellSize,1F/cellHeight,1F/cellSize);
+			cellScale = new Vector3(cellSize, cellHeight, cellSize);
+			cellScaleDivision = new Vector3(1F/cellSize, 1F/cellHeight, 1F/cellSize);
 
 			voxelWalkableHeight = (uint)(walkableHeight/cellHeight);
-			voxelWalkableClimb = Mathf.RoundToInt (walkableClimb/cellHeight);
+			voxelWalkableClimb = Mathf.RoundToInt(walkableClimb/cellHeight);
 		}
 
 		public void CollectMeshes () {
-			CollectMeshes (inputExtraMeshes, forcedBounds,out inputVertices, out inputTriangles);
+			CollectMeshes(inputExtraMeshes, forcedBounds, out inputVertices, out inputTriangles);
 		}
 
 		public static void CollectMeshes (List<ExtraMesh> extraMeshes, Bounds bounds, out Vector3[] verts, out int[] tris) {
 			verts = null;
 			tris = null;
-
 		}
 
 		public void Init () {
-
-			//Initialize the voxel area
+			// Initialize the voxel area
 			if (voxelArea == null || voxelArea.width != width || voxelArea.depth != depth)
-				voxelArea = new VoxelArea (width, depth);
-			else voxelArea.Reset ();
+				voxelArea = new VoxelArea(width, depth);
+			else voxelArea.Reset();
 		}
 
 		public void VoxelizeInput () {
+			AstarProfiler.StartProfile("Build Navigation Mesh");
 
-			AstarProfiler.StartProfile ("Build Navigation Mesh");
-
-			AstarProfiler.StartProfile ("Voxelizing - Step 1");
-
-
-			//Debug.DrawLine (forcedBounds.min,forcedBounds.max,Color.blue);
+			AstarProfiler.StartProfile("Voxelizing - Step 1");
 
 			Vector3 min = forcedBounds.min;
 			voxelOffset = min;
 
+			// Scale factor from world space to voxel space
 			float ics = 1F/cellSize;
 			float ich = 1F/cellHeight;
 
-			AstarProfiler.EndProfile ("Voxelizing - Step 1");
+			AstarProfiler.EndProfile("Voxelizing - Step 1");
 
-			AstarProfiler.StartProfile ("Voxelizing - Step 2 - Init");
+			AstarProfiler.StartProfile("Voxelizing - Step 2 - Init");
 
-			float slopeLimit = Mathf.Cos (Mathf.Atan(Mathf.Tan(maxSlope*Mathf.Deg2Rad)*(ich*cellSize)));
+			float slopeLimit = Mathf.Cos(Mathf.Atan(Mathf.Tan(maxSlope*Mathf.Deg2Rad)*(ich*cellSize)));
 
+			// Temporary arrays used for rasterization
 			float[] vTris = new float[3*3];
 			float[] vOut = new float[7*3];
 			float[] vRow = new float[7*3];
 			float[] vCellOut = new float[7*3];
 			float[] vCell = new float[7*3];
 
-			if (inputExtraMeshes == null) throw new System.NullReferenceException ("inputExtraMeshes not set");
+			if (inputExtraMeshes == null) throw new System.NullReferenceException("inputExtraMeshes not set");
 
 			//Find the largest lengths of vertex arrays and check for meshes which can be skipped
 			int maxVerts = 0;
-			for (int m=0;m<inputExtraMeshes.Count;m++) {
-				if (!inputExtraMeshes[m].bounds.Intersects (forcedBounds)) continue;
+			for (int m = 0; m < inputExtraMeshes.Count; m++) {
+				if (!inputExtraMeshes[m].bounds.Intersects(forcedBounds)) continue;
 				maxVerts = System.Math.Max(inputExtraMeshes[m].vertices.Length, maxVerts);
 			}
 
 			//Create buffer, here vertices will be stored multiplied with the local-to-voxel-space matrix
 			Vector3[] verts = new Vector3[maxVerts];
 
-			Matrix4x4 voxelMatrix = Matrix4x4.Scale (new Vector3(ics,ich,ics)) * Matrix4x4.TRS(-min,Quaternion.identity, Vector3.one);
+			// First subtract min, then scale to voxel space (one unit equals one voxel along the x and z axes)
+			// then subtract half a voxel to fix rounding
+			Matrix4x4 voxelMatrix = Matrix4x4.TRS(-new Vector3(0.5f, 0, 0.5f), Quaternion.identity, Vector3.one) * Matrix4x4.Scale(new Vector3(ics, ich, ics)) * Matrix4x4.TRS(-min, Quaternion.identity, Vector3.one);
 
-			AstarProfiler.EndProfile ("Voxelizing - Step 2 - Init");
-			AstarProfiler.StartProfile ("Voxelizing - Step 2");
+			AstarProfiler.EndProfile("Voxelizing - Step 2 - Init");
+			AstarProfiler.StartProfile("Voxelizing - Step 2");
 
-			for (int m=0;m<inputExtraMeshes.Count;m++) {
+			for (int m = 0; m < inputExtraMeshes.Count; m++) {
 				ExtraMesh mesh = inputExtraMeshes[m];
 
-				if (!mesh.bounds.Intersects (forcedBounds)) continue;
+				if (!mesh.bounds.Intersects(forcedBounds)) continue;
 
 				Matrix4x4 matrix = mesh.matrix;
 				matrix = voxelMatrix * matrix;
+
+				// Flip the orientation of all faces if the mesh is scaled in such a way
+				// that the face orientations would change
+				// This happens for example if a mesh has a negative scale along an odd number of axes
+				// e.g it happens for the scale (-1, 1, 1) but not for (-1, -1, 1) or (1,1,1)
+				var flipOrientation = VectorMath.ReversesFaceOrientations(matrix);
 
 				Vector3[] vs = mesh.vertices;
 				int[] tris = mesh.triangles;
 				int trisLength = tris.Length;
 
-				for (int i=0;i<vs.Length;i++) verts[i] = matrix.MultiplyPoint3x4(vs[i]);
+				for (int i = 0; i < vs.Length; i++) verts[i] = matrix.MultiplyPoint3x4(vs[i]);
 
 				//AstarProfiler.StartFastProfile(0);
 
 				int mesharea = mesh.area;
 
-				for (int i=0;i<trisLength;i += 3) {
+				for (int i = 0; i < trisLength; i += 3) {
 					Vector3 p1;
 					Vector3 p2;
 					Vector3 p3;
@@ -238,17 +238,22 @@ namespace Pathfinding.Voxels {
 					p2 = verts[tris[i+1]];
 					p3 = verts[tris[i+2]];
 
-					minX = (int)(Utility.Min (p1.x,p2.x,p3.x));
-					// (Mathf.Min (Mathf.Min (p1.x,p2.x),p3.x));
-					minZ = (int)(Utility.Min (p1.z,p2.z,p3.z));
+					if (flipOrientation) {
+						var tmp = p1;
+						p1 = p3;
+						p3 = tmp;
+					}
 
-					maxX = (int)System.Math.Ceiling (Utility.Max (p1.x,p2.x,p3.x));
-					maxZ = (int)System.Math.Ceiling (Utility.Max (p1.z,p2.z,p3.z));
+					minX = (int)(Utility.Min(p1.x, p2.x, p3.x));
+					minZ = (int)(Utility.Min(p1.z, p2.z, p3.z));
 
-					minX = Mathf.Clamp (minX , 0 , voxelArea.width-1);
-					maxX = Mathf.Clamp (maxX , 0 , voxelArea.width-1);
-					minZ = Mathf.Clamp (minZ , 0 , voxelArea.depth-1);
-					maxZ = Mathf.Clamp (maxZ , 0 , voxelArea.depth-1);
+					maxX = (int)System.Math.Ceiling(Utility.Max(p1.x, p2.x, p3.x));
+					maxZ = (int)System.Math.Ceiling(Utility.Max(p1.z, p2.z, p3.z));
+
+					minX = Mathf.Clamp(minX, 0, voxelArea.width-1);
+					maxX = Mathf.Clamp(maxX, 0, voxelArea.width-1);
+					minZ = Mathf.Clamp(minZ, 0, voxelArea.depth-1);
+					maxZ = Mathf.Clamp(maxZ, 0, voxelArea.depth-1);
 
 
 
@@ -266,9 +271,9 @@ namespace Pathfinding.Voxels {
 
 					//AstarProfiler.StartProfile ("Rasterize...");
 
-					normal = Vector3.Cross (p2-p1,p3-p1);
+					normal = Vector3.Cross(p2-p1, p3-p1);
 
-					float dot = Vector3.Dot (normal.normalized,Vector3.up);
+					float dot = Vector3.Dot(normal.normalized, Vector3.up);
 
 					if (dot < slopeLimit) {
 						area = UnwalkableArea;
@@ -276,19 +281,18 @@ namespace Pathfinding.Voxels {
 						area = 1 + mesharea;
 					}
 
-					Utility.CopyVector (vTris,0,p1);
-					Utility.CopyVector (vTris,3,p2);
-					Utility.CopyVector (vTris,6,p3);
+					Utility.CopyVector(vTris, 0, p1);
+					Utility.CopyVector(vTris, 3, p2);
+					Utility.CopyVector(vTris, 6, p3);
 
-					for (int x=minX;x<=maxX;x++) {
-
-						int nrow = Utility.ClipPolygon (vTris , 3 , vOut , 1F , -x+0.5F,0);
+					for (int x = minX; x <= maxX; x++) {
+						int nrow = Utility.ClipPolygon(vTris, 3, vOut, 1F, -x+0.5F, 0);
 
 						if (nrow < 3) {
 							continue;
 						}
 
-						nrow = Utility.ClipPolygon (vOut,nrow,vRow,-1F,x+0.5F,0);
+						nrow = Utility.ClipPolygon(vOut, nrow, vRow, -1F, x+0.5F, 0);
 
 						if (nrow < 3) {
 							continue;
@@ -296,27 +300,26 @@ namespace Pathfinding.Voxels {
 
 						float clampZ1 = vRow[2];
 						float clampZ2 = vRow[2];
-						for (int q=1; q < nrow;q++) {
+						for (int q = 1; q < nrow; q++) {
 							float val = vRow[q*3+2];
-							clampZ1 = System.Math.Min (clampZ1,val);
-							clampZ2 = System.Math.Max (clampZ2,val);
+							clampZ1 = System.Math.Min(clampZ1, val);
+							clampZ2 = System.Math.Max(clampZ2, val);
 						}
 
-						int clampZ1I = AstarMath.Clamp ((int)System.Math.Round (clampZ1),0, voxelArea.depth-1);
-						int clampZ2I = AstarMath.Clamp ((int)System.Math.Round (clampZ2),0, voxelArea.depth-1);
+						int clampZ1I = Mathf.Clamp((int)System.Math.Round(clampZ1), 0, voxelArea.depth-1);
+						int clampZ2I = Mathf.Clamp((int)System.Math.Round(clampZ2), 0, voxelArea.depth-1);
 
 
-						for (int z=clampZ1I;z<=clampZ2I;z++) {
-
+						for (int z = clampZ1I; z <= clampZ2I; z++) {
 							//AstarProfiler.StartFastProfile(1);
-							int ncell = Utility.ClipPolygon (vRow , nrow , vCellOut , 1F , -z+0.5F,2);
+							int ncell = Utility.ClipPolygon(vRow, nrow, vCellOut, 1F, -z+0.5F, 2);
 
 							if (ncell < 3) {
 								//AstarProfiler.EndFastProfile(1);
 								continue;
 							}
 
-							ncell = Utility.ClipPolygonY (vCellOut , ncell , vCell , -1F , z+0.5F,2);
+							ncell = Utility.ClipPolygonY(vCellOut, ncell, vCell, -1F, z+0.5F, 2);
 
 							if (ncell < 3) {
 								//AstarProfiler.EndFastProfile(1);
@@ -327,10 +330,10 @@ namespace Pathfinding.Voxels {
 							//AstarProfiler.StartFastProfile(2);
 							float sMin = vCell[1];
 							float sMax = vCell[1];
-							for (int q=1; q < ncell;q++) {
+							for (int q = 1; q < ncell; q++) {
 								float val = vCell[q*3+1];
-								sMin = System.Math.Min (sMin,val);
-								sMax = System.Math.Max (sMax,val);
+								sMin = System.Math.Min(sMin, val);
+								sMax = System.Math.Max(sMax, val);
 							}
 
 							//AstarProfiler.EndFastProfile(2);
@@ -339,26 +342,20 @@ namespace Pathfinding.Voxels {
 							// Skip span if below the bounding box
 							if (maxi >= 0) {
 								// Make sure mini >= 0
-								int mini = System.Math.Max (0, (int)sMin);
+								int mini = System.Math.Max(0, (int)sMin);
 
 								// Make sure the span is at least 1 voxel high
-								maxi = System.Math.Max (mini+1, maxi);
+								maxi = System.Math.Max(mini+1, maxi);
 
-								voxelArea.AddLinkedSpan (z*voxelArea.width+x, (uint)mini, (uint)maxi, area, voxelWalkableClimb);
+								voxelArea.AddLinkedSpan(z*voxelArea.width+x, (uint)mini, (uint)maxi, area, voxelWalkableClimb);
 							}
-
 						}
-
-
 					}
-
-
 				}
 				//AstarProfiler.EndFastProfile(0);
 				//AstarProfiler.EndProfile ("Rasterize...");
 			}
-			AstarProfiler.EndProfile ("Voxelizing - Step 2");
-
+			AstarProfiler.EndProfile("Voxelizing - Step 2");
 
 		}
 
@@ -368,33 +365,31 @@ namespace Pathfinding.Voxels {
 			var min = forcedBounds.min;
 
 			LinkedVoxelSpan[] spans = voxelArea.linkedSpans;
-			for (int z=0, pz = 0;z < wd;z += voxelArea.width, pz++) {
-				for (int x=0;x < voxelArea.width;x++) {
-
+			for (int z = 0, pz = 0; z < wd; z += voxelArea.width, pz++) {
+				for (int x = 0; x < voxelArea.width; x++) {
 					for (int s = z+x; s != -1 && spans[s].bottom != VoxelArea.InvalidSpanValue; s = spans[s].next) {
-
 						uint bottom = spans[s].top;
 						uint top = spans[s].next != -1 ? spans[spans[s].next].bottom : VoxelArea.MaxHeight;
 
 						if (bottom > top) {
-							Debug.Log (bottom + " " + top);
-							Debug.DrawLine (new Vector3(x*cellSize,bottom*cellHeight,pz*cellSize)+min, new Vector3(x*cellSize,top*cellHeight,pz*cellSize)+min, Color.yellow, 1);
+							Debug.Log(bottom + " " + top);
+							Debug.DrawLine(new Vector3(x*cellSize, bottom*cellHeight, pz*cellSize)+min, new Vector3(x*cellSize, top*cellHeight, pz*cellSize)+min, Color.yellow, 1);
 						}
 						//Debug.DrawRay (p,voxelArea.VectorDirection[d]*cellSize*0.5F,Color.red);
 						if (top - bottom < voxelWalkableHeight) {
 							//spans[s].area = UnwalkableArea;
-
 						}
 					}
 				}
 			}
 #else
-			Debug.LogError ("This debug method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
+			Debug.LogError("This debug method only works with !ASTAR_RECAST_CLASS_BASED_LINKED_LIST");
 #endif
 		}
 
 		public void DebugDrawCompactSpans () {
 			int sCount = voxelArea.compactSpans.Length;
+
 			Vector3[] debugPointsTop = new Vector3[sCount];
 			Vector3[] debugPointsBottom = new Vector3[sCount];
 			Color[] debugColors = new Color[sCount];
@@ -405,10 +400,9 @@ namespace Pathfinding.Voxels {
 
 			var min = forcedBounds.min;
 
-			for (int z=0, pz = 0;z < wd;z += voxelArea.width, pz++) {
-				for (int x=0;x < voxelArea.width;x++) {
-
-					Vector3 p = new Vector3(x,0,pz)*cellSize+min;
+			for (int z = 0, pz = 0; z < wd; z += voxelArea.width, pz++) {
+				for (int x = 0; x < voxelArea.width; x++) {
+					Vector3 p = new Vector3(x, 0, pz)*cellSize+min;
 
 					//CompactVoxelCell c = voxelArea.compactCells[x+z];
 					CompactVoxelCell c = voxelArea.compactCells[x+z];
@@ -416,7 +410,7 @@ namespace Pathfinding.Voxels {
 					//	Debug.DrawRay (p,Vector3.up,Color.red);
 					//}
 
-					for (int i=(int)c.index, ni = (int)(c.index+c.count);i<ni;i++) {
+					for (int i = (int)c.index, ni = (int)(c.index+c.count); i < ni; i++) {
 						CompactVoxelSpan s = voxelArea.compactSpans[i];
 
 						p.y = ((float)(s.y+0.1F))*cellHeight+min.y;
@@ -451,14 +445,14 @@ namespace Pathfinding.Voxels {
 				}
 			}
 
-			DebugUtility.DrawCubes (debugPointsTop,debugPointsBottom,debugColors, cellSize);
+			DebugUtility.DrawCubes(debugPointsTop, debugPointsBottom, debugColors, cellSize);
 		}
 
 		public void BuildCompactField () {
-			AstarProfiler.StartProfile ("Build Compact Voxel Field");
+			AstarProfiler.StartProfile("Build Compact Voxel Field");
 
 			//Build compact representation
-			int spanCount = voxelArea.GetSpanCount ();
+			int spanCount = voxelArea.GetSpanCount();
 
 			voxelArea.compactSpanCount = spanCount;
 			if (voxelArea.compactSpans == null || voxelArea.compactSpans.Length < spanCount) {
@@ -473,7 +467,7 @@ namespace Pathfinding.Voxels {
 			int wd = w*d;
 
 			if (this.voxelWalkableHeight >= 0xFFFF) {
-				Debug.LogWarning ("Too high walkable height to guarantee correctness. Increase voxel height or lower walkable height.");
+				Debug.LogWarning("Too high walkable height to guarantee correctness. Increase voxel height or lower walkable height.");
 			}
 
 #if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
@@ -481,15 +475,12 @@ namespace Pathfinding.Voxels {
 #endif
 
 			//Parallel.For (0, voxelArea.depth, delegate (int pz) {
-			for (int z=0, pz = 0;z < wd;z += w, pz++) {
-
-				for (int x=0;x < w;x++) {
-
+			for (int z = 0, pz = 0; z < wd; z += w, pz++) {
+				for (int x = 0; x < w; x++) {
 #if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
-
 					int spanIndex = x+z;
 					if (spans[spanIndex].bottom == VoxelArea.InvalidSpanValue) {
-						voxelArea.compactCells[x+z] = new CompactVoxelCell (0,0);
+						voxelArea.compactCells[x+z] = new CompactVoxelCell(0, 0);
 						continue;
 					}
 
@@ -499,13 +490,12 @@ namespace Pathfinding.Voxels {
 					//Vector3 p = new Vector3(x,0,pz)*cellSize+voxelOffset;
 
 					while (spanIndex != -1) {
-
 						if (spans[spanIndex].area != UnwalkableArea) {
 							int bottom = (int)spans[spanIndex].top;
 							int next = spans[spanIndex].next;
 							int top = next != -1 ? (int)spans[next].bottom : VoxelArea.MaxHeightInt;
 
-							voxelArea.compactSpans[idx] = new CompactVoxelSpan ((ushort)(bottom > 0xFFFF ? 0xFFFF : bottom) , (uint)(top-bottom > 0xFFFF ? 0xFFFF : top-bottom));
+							voxelArea.compactSpans[idx] = new CompactVoxelSpan((ushort)(bottom > 0xFFFF ? 0xFFFF : bottom), (uint)(top-bottom > 0xFFFF ? 0xFFFF : top-bottom));
 							voxelArea.areaTypes[idx] = spans[spanIndex].area;
 							idx++;
 							count++;
@@ -513,12 +503,12 @@ namespace Pathfinding.Voxels {
 						spanIndex = spans[spanIndex].next;
 					}
 
-					voxelArea.compactCells[x+z] = new CompactVoxelCell (index, count);
+					voxelArea.compactCells[x+z] = new CompactVoxelCell(index, count);
 #else
 					VoxelSpan s = voxelArea.cells[x+z].firstSpan;
 
 					if (s == null) {
-						voxelArea.compactCells[x+z] = new CompactVoxelCell (0,0);
+						voxelArea.compactCells[x+z] = new CompactVoxelCell(0, 0);
 						continue;
 					}
 
@@ -528,12 +518,11 @@ namespace Pathfinding.Voxels {
 					//Vector3 p = new Vector3(x,0,pz)*cellSize+voxelOffset;
 
 					while (s != null) {
-
 						if (s.area != UnwalkableArea) {
 							int bottom = (int)s.top;
 							int top = s.next != null ? (int)s.next.bottom : VoxelArea.MaxHeightInt;
 
-							voxelArea.compactSpans[idx] = new CompactVoxelSpan ((ushort)AstarMath.Clamp (bottom, 0, 0xffff) , (uint)AstarMath.Clamp (top-bottom, 0, 0xffff));
+							voxelArea.compactSpans[idx] = new CompactVoxelSpan((ushort)Mathf.Clamp(bottom, 0, 0xffff), (uint)Mathf.Clamp(top-bottom, 0, 0xffff));
 							voxelArea.areaTypes[idx] = s.area;
 							idx++;
 							count++;
@@ -541,16 +530,16 @@ namespace Pathfinding.Voxels {
 						s = s.next;
 					}
 
-					voxelArea.compactCells[x+z] = new CompactVoxelCell (index, count);
+					voxelArea.compactCells[x+z] = new CompactVoxelCell(index, count);
 #endif
 				}
 			}
 
-			AstarProfiler.EndProfile ("Build Compact Voxel Field");
+			AstarProfiler.EndProfile("Build Compact Voxel Field");
 		}
 
 		public void BuildVoxelConnections () {
-			AstarProfiler.StartProfile ("Build Voxel Connections");
+			AstarProfiler.StartProfile("Build Voxel Connections");
 
 			int wd = voxelArea.width*voxelArea.depth;
 
@@ -558,29 +547,24 @@ namespace Pathfinding.Voxels {
 			CompactVoxelCell[] cells = voxelArea.compactCells;
 
 			//Build voxel connections
-			for (int z=0, pz = 0;z < wd;z += voxelArea.width, pz++) {
+			for (int z = 0, pz = 0; z < wd; z += voxelArea.width, pz++) {
+				//System.Threading.ManualResetEvent[] handles = new System.Threading.ManualResetEvent[voxelArea.depth];
 
-
-			//System.Threading.ManualResetEvent[] handles = new System.Threading.ManualResetEvent[voxelArea.depth];
-
-			//This will run the loop in multiple threads (speedup by ? 40%)
-			//Parallel.For (0, voxelArea.depth, delegate (int pz) {
-			//System.Threading.WaitCallback del = delegate (System.Object _pz) {
+				//This will run the loop in multiple threads (speedup by ? 40%)
+				//Parallel.For (0, voxelArea.depth, delegate (int pz) {
+				//System.Threading.WaitCallback del = delegate (System.Object _pz) {
 				//int pz = (int)_pz;
 				//int z = pz*voxelArea.width;
 
-				for (int x=0;x < voxelArea.width;x++) {
-
+				for (int x = 0; x < voxelArea.width; x++) {
 					CompactVoxelCell c = cells[x+z];
 
-					for (int i=(int)c.index, ni = (int)(c.index+c.count);i<ni;i++) {
-
+					for (int i = (int)c.index, ni = (int)(c.index+c.count); i < ni; i++) {
 						CompactVoxelSpan s = spans[i];
 
 						spans[i].con = 0xFFFFFFFF;
 
-						for (int d=0;d<4;d++) {
-
+						for (int d = 0; d < 4; d++) {
 							int nx = x+voxelArea.DirectionX[d];
 							int nz = z+voxelArea.DirectionZ[d];
 
@@ -590,155 +574,155 @@ namespace Pathfinding.Voxels {
 
 							CompactVoxelCell nc = cells[nx+nz];
 
-							for (int k=(int)nc.index, nk = (int)(nc.index+nc.count); k<nk; k++) {
-
+							for (int k = (int)nc.index, nk = (int)(nc.index+nc.count); k < nk; k++) {
 								CompactVoxelSpan ns = spans[k];
 
-								int bottom = System.Math.Max (s.y,ns.y);
+								int bottom = System.Math.Max(s.y, ns.y);
 
-								int top = AstarMath.Min ((int)s.y+(int)s.h,(int)ns.y+(int)ns.h);
+								int top = System.Math.Min((int)s.y+(int)s.h, (int)ns.y+(int)ns.h);
 
-								if ((top-bottom) >= voxelWalkableHeight && System.Math.Abs ((int)ns.y - (int)s.y) <= voxelWalkableClimb) {
+								if ((top-bottom) >= voxelWalkableHeight && System.Math.Abs((int)ns.y - (int)s.y) <= voxelWalkableClimb) {
 									uint connIdx = (uint)k - nc.index;
 
 									if (connIdx > MaxLayers) {
-										Debug.LogError ("Too many layers");
+										Debug.LogError("Too many layers");
 										continue;
 									}
 
-									spans[i].SetConnection (d,connIdx);
+									spans[i].SetConnection(d, connIdx);
 									break;
 								}
-
 							}
 						}
 					}
 				}
 
 				//handles[pz].Set ();
-			//};
-			//});
+				//};
+				//});
 			}
 
 			/*for (int z=0, pz = 0;z < wd;z += voxelArea.width, pz++) {
-				handles[pz] = new System.Threading.ManualResetEvent(false);
-				System.Threading.ThreadPool.QueueUserWorkItem (del, pz);
-			}
+			 *  handles[pz] = new System.Threading.ManualResetEvent(false);
+			 *  System.Threading.ThreadPool.QueueUserWorkItem (del, pz);
+			 * }
+			 *
+			 * System.Threading.WaitHandle.WaitAll (handles);*/
 
-			System.Threading.WaitHandle.WaitAll (handles);*/
-
-			AstarProfiler.EndProfile ("Build Voxel Connections");
+			AstarProfiler.EndProfile("Build Voxel Connections");
 		}
 
 		void DrawLine (int a, int b, int[] indices, int[] verts, Color col) {
 			int p1 = (indices[a] & 0x0fffffff) * 4;
 			int p2 = (indices[b] & 0x0fffffff) * 4;
 
-			Debug.DrawLine (ConvertPosCorrZ (verts[p1+0],verts[p1+1],verts[p1+2]),ConvertPosCorrZ (verts[p2+0],verts[p2+1],verts[p2+2]),col);
+			Debug.DrawLine(ConvertPosCorrZ(verts[p1+0], verts[p1+1], verts[p1+2]), ConvertPosCorrZ(verts[p2+0], verts[p2+1], verts[p2+2]), col);
 		}
 
 		Vector3 ConvertPos (int x, int y, int z) {
-			Vector3 p = Vector3.Scale (
-				new Vector3 (
+			Vector3 p = Vector3.Scale(
+				new Vector3(
 					x+0.5F,
 					y,
 					(z/(float)voxelArea.width)+0.5F
-				)
-				,cellScale)
-				+voxelOffset;
+					)
+				, cellScale)
+						+voxelOffset;
+
 			return p;
 		}
 
 		Vector3 ConvertPosCorrZ (int x, int y, int z) {
-			Vector3 p = Vector3.Scale (
-				new Vector3 (
+			Vector3 p = Vector3.Scale(
+				new Vector3(
 					x,
 					y,
 					z
-				)
-				,cellScale)
-				+voxelOffset;
+					)
+				, cellScale)
+						+voxelOffset;
+
 			return p;
 		}
 
 		Vector3 ConvertPosWithoutOffset (int x, int y, int z) {
-			Vector3 p = Vector3.Scale (
-				new Vector3 (
+			Vector3 p = Vector3.Scale(
+				new Vector3(
 					x,
 					y,
 					(z/(float)voxelArea.width)
-				)
-				,cellScale)
-				+voxelOffset;
+					)
+				, cellScale)
+						+voxelOffset;
+
 			return p;
 		}
 
-		Vector3 ConvertPosition (int x,int z, int i) {
+		Vector3 ConvertPosition (int x, int z, int i) {
 			CompactVoxelSpan s = voxelArea.compactSpans[i];
-			return new Vector3 (x*cellSize,s.y*cellHeight,(z/(float)voxelArea.width)*cellSize)+voxelOffset;
+
+			return new Vector3(x*cellSize, s.y*cellHeight, (z/(float)voxelArea.width)*cellSize)+voxelOffset;
 		}
 
 
 		public void ErodeWalkableArea (int radius) {
-
-			AstarProfiler.StartProfile ("Erode Walkable Area");
+			AstarProfiler.StartProfile("Erode Walkable Area");
 
 			ushort[] src = voxelArea.tmpUShortArr;
 			if (src == null || src.Length < voxelArea.compactSpanCount) {
 				src = voxelArea.tmpUShortArr = new ushort[voxelArea.compactSpanCount];
 			}
 
-			Pathfinding.Util.Memory.MemSet<ushort> (src, 0xffff, sizeof(ushort));
+			Pathfinding.Util.Memory.MemSet<ushort>(src, 0xffff, sizeof(ushort));
 			//for (int i=0;i<src.Length;i++) {
 			//	src[i] = 0xffff;
 			//}
 
-			CalculateDistanceField (src);
+			CalculateDistanceField(src);
 
-			for (int i=0;i<src.Length;i++) {
+			for (int i = 0; i < src.Length; i++) {
 				//Note multiplied with 2 because the distance field increments distance by 2 for each voxel (and 3 for diagonal)
 				if (src[i] < radius*2) {
 					voxelArea.areaTypes[i] = UnwalkableArea;
 				}
 			}
 
-			AstarProfiler.EndProfile ("Erode Walkable Area");
+			AstarProfiler.EndProfile("Erode Walkable Area");
 		}
 
 		public void BuildDistanceField () {
-			AstarProfiler.StartProfile ("Build Distance Field");
+			AstarProfiler.StartProfile("Build Distance Field");
 
 			ushort[] src = voxelArea.tmpUShortArr;
 			if (src == null || src.Length < voxelArea.compactSpanCount) {
 				src = voxelArea.tmpUShortArr = new ushort[voxelArea.compactSpanCount];
 			}
 
-			Pathfinding.Util.Memory.MemSet<ushort> (src, 0xffff, sizeof(ushort));
+			Pathfinding.Util.Memory.MemSet<ushort>(src, 0xffff, sizeof(ushort));
 			//for (int i=0;i<src.Length;i++) {
 			//	src[i] = 0xffff;
 			//}
 
-			voxelArea.maxDistance = CalculateDistanceField (src);
+			voxelArea.maxDistance = CalculateDistanceField(src);
 
 			ushort[] dst = voxelArea.dist;
 			if (dst == null || dst.Length < voxelArea.compactSpanCount) {
 				dst = new ushort[voxelArea.compactSpanCount];
 			}
 
-			dst = BoxBlur (src,dst);
+			dst = BoxBlur(src, dst);
 
 			voxelArea.dist = dst;
 
 
-			AstarProfiler.EndProfile ("Build Distance Field");
+			AstarProfiler.EndProfile("Build Distance Field");
 		}
 
 		/** \todo Complete the ErodeVoxels function translation */
-		[System.Obsolete ("This function is not complete and should not be used")]
+		[System.Obsolete("This function is not complete and should not be used")]
 		public void ErodeVoxels (int radius) {
-
 			if (radius > 255) {
-				Debug.LogError ("Max Erode Radius is 255");
+				Debug.LogError("Max Erode Radius is 255");
 				radius = 255;
 			}
 
@@ -746,23 +730,20 @@ namespace Pathfinding.Voxels {
 
 			int[] dist = new int[voxelArea.compactSpanCount];
 
-			for (int i=0;i<dist.Length;i++) {
+			for (int i = 0; i < dist.Length; i++) {
 				dist[i] = 0xFF;
 			}
 
-			for (int z=0;z < wd;z += voxelArea.width) {
-				for (int x=0;x < voxelArea.width;x++) {
-
+			for (int z = 0; z < wd; z += voxelArea.width) {
+				for (int x = 0; x < voxelArea.width; x++) {
 					CompactVoxelCell c = voxelArea.compactCells[x+z];
 
-					for (int i= (int)c.index, ni = (int)(c.index+c.count); i < ni; i++) {
-
+					for (int i = (int)c.index, ni = (int)(c.index+c.count); i < ni; i++) {
 						if (voxelArea.areaTypes[i] != UnwalkableArea) {
-
 							CompactVoxelSpan s = voxelArea.compactSpans[i];
 							int nc = 0;
-							for (int dir=0;dir<4;dir++) {
-								if (s.GetConnection (dir) != NotConnected)
+							for (int dir = 0; dir < 4; dir++) {
+								if (s.GetConnection(dir) != NotConnected)
 									nc++;
 							}
 							//At least one missing neighbour
@@ -779,67 +760,67 @@ namespace Pathfinding.Voxels {
 			//Pass 1
 
 			/*for (int z=0;z < wd;z += voxelArea.width) {
-				for (int x=0;x < voxelArea.width;x++) {
-
-					CompactVoxelCell c = voxelArea.compactCells[x+z];
-
-					for (int i= (int)c.index, ci = (int)(c.index+c.count); i < ci; i++) {
-						CompactVoxelSpan s = voxelArea.compactSpans[i];
-
-						if (s.GetConnection (0) != NotConnected) {
-							// (-1,0)
-							int nx = x+voxelArea.DirectionX[0];
-							int nz = z+voxelArea.DirectionZ[0];
-
-							int ni = (int)(voxelArea.compactCells[nx+nz].index+s.GetConnection (0));
-							CompactVoxelSpan ns = voxelArea.compactSpans[ni];
-
-							if (dist[ni]+2 < dist[i]) {
-								dist[i] = (ushort)(dist[ni]+2);
-							}
-
-							if (ns.GetConnection (3) != NotConnected) {
-								// (-1,0) + (0,-1) = (-1,-1)
-								int nnx = nx+voxelArea.DirectionX[3];
-								int nnz = nz+voxelArea.DirectionZ[3];
-
-								int nni = (int)(voxelArea.compactCells[nnx+nnz].index+ns.GetConnection (3));
-
-								if (src[nni]+3 < src[i]) {
-									src[i] = (ushort)(src[nni]+3);
-								}
-							}
-						}
-
-						if (s.GetConnection (3) != NotConnected) {
-							// (0,-1)
-							int nx = x+voxelArea.DirectionX[3];
-							int nz = z+voxelArea.DirectionZ[3];
-
-							int ni = (int)(voxelArea.compactCells[nx+nz].index+s.GetConnection (3));
-
-							if (src[ni]+2 < src[i]) {
-								src[i] = (ushort)(src[ni]+2);
-							}
-
-							CompactVoxelSpan ns = voxelArea.compactSpans[ni];
-
-							if (ns.GetConnection (2) != NotConnected) {
-
-								// (0,-1) + (1,0) = (1,-1)
-								int nnx = nx+voxelArea.DirectionX[2];
-								int nnz = nz+voxelArea.DirectionZ[2];
-
-								int nni = (int)(voxelArea.compactCells[nnx+nnz].index+ns.GetConnection (2));
-
-								if (src[nni]+3 < src[i]) {
-									src[i] = (ushort)(src[nni]+3);
-								}
-							}
-						}
-					}
-				}
-			}*/
+			 *  for (int x=0;x < voxelArea.width;x++) {
+			 *
+			 *      CompactVoxelCell c = voxelArea.compactCells[x+z];
+			 *
+			 *      for (int i= (int)c.index, ci = (int)(c.index+c.count); i < ci; i++) {
+			 *          CompactVoxelSpan s = voxelArea.compactSpans[i];
+			 *
+			 *          if (s.GetConnection (0) != NotConnected) {
+			 *              // (-1,0)
+			 *              int nx = x+voxelArea.DirectionX[0];
+			 *              int nz = z+voxelArea.DirectionZ[0];
+			 *
+			 *              int ni = (int)(voxelArea.compactCells[nx+nz].index+s.GetConnection (0));
+			 *              CompactVoxelSpan ns = voxelArea.compactSpans[ni];
+			 *
+			 *              if (dist[ni]+2 < dist[i]) {
+			 *                  dist[i] = (ushort)(dist[ni]+2);
+			 *              }
+			 *
+			 *              if (ns.GetConnection (3) != NotConnected) {
+			 *                  // (-1,0) + (0,-1) = (-1,-1)
+			 *                  int nnx = nx+voxelArea.DirectionX[3];
+			 *                  int nnz = nz+voxelArea.DirectionZ[3];
+			 *
+			 *                  int nni = (int)(voxelArea.compactCells[nnx+nnz].index+ns.GetConnection (3));
+			 *
+			 *                  if (src[nni]+3 < src[i]) {
+			 *                      src[i] = (ushort)(src[nni]+3);
+			 *                  }
+			 *              }
+			 *          }
+			 *
+			 *          if (s.GetConnection (3) != NotConnected) {
+			 *              // (0,-1)
+			 *              int nx = x+voxelArea.DirectionX[3];
+			 *              int nz = z+voxelArea.DirectionZ[3];
+			 *
+			 *              int ni = (int)(voxelArea.compactCells[nx+nz].index+s.GetConnection (3));
+			 *
+			 *              if (src[ni]+2 < src[i]) {
+			 *                  src[i] = (ushort)(src[ni]+2);
+			 *              }
+			 *
+			 *              CompactVoxelSpan ns = voxelArea.compactSpans[ni];
+			 *
+			 *              if (ns.GetConnection (2) != NotConnected) {
+			 *
+			 *                  // (0,-1) + (1,0) = (1,-1)
+			 *                  int nnx = nx+voxelArea.DirectionX[2];
+			 *                  int nnz = nz+voxelArea.DirectionZ[2];
+			 *
+			 *                  int nni = (int)(voxelArea.compactCells[nnx+nnz].index+ns.GetConnection (2));
+			 *
+			 *                  if (src[nni]+3 < src[i]) {
+			 *                      src[i] = (ushort)(src[nni]+3);
+			 *                  }
+			 *              }
+			 *          }
+			 *      }
+			 *  }
+			 * }*/
 		}
 
 		public void FilterLowHeightSpans (uint voxelWalkableHeight, float cs, float ch, Vector3 min) {
@@ -848,11 +829,9 @@ namespace Pathfinding.Voxels {
 			//Filter all ledges
 #if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 			LinkedVoxelSpan[] spans = voxelArea.linkedSpans;
-			for (int z=0, pz = 0;z < wd;z += voxelArea.width, pz++) {
-				for (int x=0;x < voxelArea.width;x++) {
-
+			for (int z = 0, pz = 0; z < wd; z += voxelArea.width, pz++) {
+				for (int x = 0; x < voxelArea.width; x++) {
 					for (int s = z+x; s != -1 && spans[s].bottom != VoxelArea.InvalidSpanValue; s = spans[s].next) {
-
 						uint bottom = spans[s].top;
 						uint top = spans[s].next != -1 ? spans[spans[s].next].bottom : VoxelArea.MaxHeight;
 
@@ -863,11 +842,9 @@ namespace Pathfinding.Voxels {
 				}
 			}
 #else
-			for (int z=0, pz = 0;z < wd;z += voxelArea.width, pz++) {
-				for (int x=0;x < voxelArea.width;x++) {
-
+			for (int z = 0, pz = 0; z < wd; z += voxelArea.width, pz++) {
+				for (int x = 0; x < voxelArea.width; x++) {
 					for (VoxelSpan s = voxelArea.cells[z+x].firstSpan; s != null; s = s.next) {
-
 						uint bottom = s.top;
 						uint top = s.next != null ? s.next.bottom : VoxelArea.MaxHeight;
 
@@ -878,12 +855,10 @@ namespace Pathfinding.Voxels {
 				}
 			}
 #endif
-
 		}
 
 		//Code almost completely ripped from Recast
 		public void FilterLedges (uint voxelWalkableHeight, int voxelWalkableClimb, float cs, float ch, Vector3 min) {
-
 			int wd = voxelArea.width*voxelArea.depth;
 
 #if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
@@ -894,14 +869,12 @@ namespace Pathfinding.Voxels {
 			int width = voxelArea.width;
 
 			//Filter all ledges
-			for (int z=0, pz = 0;z < wd;z += width, pz++) {
-				for (int x=0;x < width;x++) {
-
+			for (int z = 0, pz = 0; z < wd; z += width, pz++) {
+				for (int x = 0; x < width; x++) {
 #if !ASTAR_RECAST_CLASS_BASED_LINKED_LIST
 					if (spans[x+z].bottom == VoxelArea.InvalidSpanValue) continue;
 
 					for (int s = x+z; s != -1; s = spans[s].next) {
-
 						//Skip non-walkable spans
 						if (spans[s].area == UnwalkableArea) {
 							continue;
@@ -931,8 +904,8 @@ namespace Pathfinding.Voxels {
 
 							int ntop = spans[nsx].bottom != VoxelArea.InvalidSpanValue ? (int)spans[nsx].bottom : VoxelArea.MaxHeightInt;
 
-							if (System.Math.Min (top,ntop) - System.Math.Max (bottom,nbottom) > voxelWalkableHeight) {
-								minHeight = System.Math.Min (minHeight, nbottom - bottom);
+							if (System.Math.Min(top, ntop) - System.Math.Max(bottom, nbottom) > voxelWalkableHeight) {
+								minHeight = System.Math.Min(minHeight, nbottom - bottom);
 							}
 
 							//Loop through spans
@@ -941,10 +914,10 @@ namespace Pathfinding.Voxels {
 									nbottom = (int)spans[ns].top;
 									ntop = spans[ns].next != -1 ? (int)spans[spans[ns].next].bottom : VoxelArea.MaxHeightInt;
 
-									if (System.Math.Min (top, ntop) - System.Math.Max (bottom, nbottom) > voxelWalkableHeight) {
-										minHeight = AstarMath.Min (minHeight, nbottom - bottom);
+									if (System.Math.Min(top, ntop) - System.Math.Max(bottom, nbottom) > voxelWalkableHeight) {
+										minHeight = System.Math.Min(minHeight, nbottom - bottom);
 
-										if (System.Math.Abs (nbottom - bottom) <= voxelWalkableClimb) {
+										if (System.Math.Abs(nbottom - bottom) <= voxelWalkableClimb) {
 											if (nbottom < aMinHeight) { aMinHeight = nbottom; }
 											if (nbottom > aMaxHeight) { aMaxHeight = nbottom; }
 										}
@@ -959,7 +932,6 @@ namespace Pathfinding.Voxels {
 					}
 #else
 					for (VoxelSpan s = voxelArea.cells[z+x].firstSpan; s != null; s = s.next) {
-
 						//Skip non-walkable spans
 						if (s.area == UnwalkableArea) {
 							continue;
@@ -974,7 +946,6 @@ namespace Pathfinding.Voxels {
 						int aMaxHeight = (int)s.top;
 
 						for (int d = 0; d < 4; d++) {
-
 							int nx = x+voxelArea.DirectionX[d];
 							int nz = z+voxelArea.DirectionZ[d];
 
@@ -990,8 +961,8 @@ namespace Pathfinding.Voxels {
 
 							int ntop = nsx != null ? (int)nsx.bottom : VoxelArea.MaxHeightInt;
 
-							if (AstarMath.Min (top,ntop) - AstarMath.Max (bottom,nbottom) > voxelWalkableHeight) {
-								minHeight = AstarMath.Min (minHeight, nbottom - bottom);
+							if (System.Math.Min(top, ntop) - System.Math.Max(bottom, nbottom) > voxelWalkableHeight) {
+								minHeight = System.Math.Min(minHeight, nbottom - bottom);
 							}
 
 							//Loop through spans
@@ -999,10 +970,10 @@ namespace Pathfinding.Voxels {
 								nbottom = (int)ns.top;
 								ntop = ns.next != null ? (int)ns.next.bottom : VoxelArea.MaxHeightInt;
 
-								if (AstarMath.Min (top, ntop) - AstarMath.Max (bottom, nbottom) > voxelWalkableHeight) {
-									minHeight = AstarMath.Min (minHeight, nbottom - bottom);
+								if (System.Math.Min(top, ntop) - System.Math.Max(bottom, nbottom) > voxelWalkableHeight) {
+									minHeight = System.Math.Min(minHeight, nbottom - bottom);
 
-									if (AstarMath.Abs (nbottom - bottom) <= voxelWalkableClimb) {
+									if (System.Math.Abs(nbottom - bottom) <= voxelWalkableClimb) {
 										if (nbottom < aMinHeight) { aMinHeight = nbottom; }
 										if (nbottom > aMaxHeight) { aMaxHeight = nbottom; }
 									}
@@ -1015,7 +986,6 @@ namespace Pathfinding.Voxels {
 						}
 					}
 #endif
-
 				}
 			}
 		}

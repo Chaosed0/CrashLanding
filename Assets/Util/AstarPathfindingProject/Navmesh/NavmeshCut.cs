@@ -1,7 +1,6 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using Pathfinding;
 
 namespace Pathfinding {
 	/** Navmesh cutting is used for fast recast graph updates.
@@ -11,10 +10,10 @@ namespace Pathfinding {
 	 * With navmesh cutting you can remove (cut) parts of the navmesh that is blocked by obstacles such as a new building in an RTS game however you cannot add anything new to the navmesh or change
 	 * the positions of the nodes.
 	 *
-\htmlonly
-<iframe width="640" height="480" src="//www.youtube.com/embed/qXi5qhhGNIw" frameborder="0" allowfullscreen>
-</iframe>
-\endhtmlonly
+	 * \htmlonly
+	 * <iframe width="640" height="480" src="//www.youtube.com/embed/qXi5qhhGNIw" frameborder="0" allowfullscreen>
+	 * </iframe>
+	 * \endhtmlonly
 	 *
 	 * The NavmeshCut component uses a 2D shape to cut the navmesh with. A rectangle and circle shape is built in, but you can also specify a custom mesh to use.
 	 * The custom mesh should be a flat 2D shape like in the image below. The script will then find the contour of that mesh and use that shape as the cut.
@@ -43,10 +42,10 @@ namespace Pathfinding {
 	 *
 	 * \astarpro
 	 * \see http://www.arongranberg.com/2013/08/navmesh-cutting/
-	*/
+	 */
 	[AddComponentMenu("Pathfinding/Navmesh/Navmesh Cut")]
+	[HelpURL("http://arongranberg.com/astar/docs/class_pathfinding_1_1_navmesh_cut.php")]
 	public class NavmeshCut : MonoBehaviour {
-
 		public enum MeshType {
 			Rectangle,
 			Circle,
@@ -59,19 +58,19 @@ namespace Pathfinding {
 		public static event System.Action<NavmeshCut> OnDestroyCallback;
 
 		private static void AddCut (NavmeshCut obj) {
-			allCuts.Add (obj);
+			allCuts.Add(obj);
 		}
 
 		private static void RemoveCut (NavmeshCut obj) {
-			allCuts.Remove (obj);
+			allCuts.Remove(obj);
 		}
 
 		/** Get all active instances which intersect the bounds */
-		public static List<NavmeshCut> GetAllInRange(Bounds b) {
-			List<NavmeshCut> cuts = Pathfinding.Util.ListPool<NavmeshCut>.Claim ();
-			for (int i=0;i<allCuts.Count;i++) {
+		public static List<NavmeshCut> GetAllInRange (Bounds b) {
+			List<NavmeshCut> cuts = Pathfinding.Util.ListPool<NavmeshCut>.Claim();
+			for (int i = 0; i < allCuts.Count; i++) {
 				if (allCuts[i].enabled && Intersects(b, allCuts[i].GetBounds())) {
-					cuts.Add (allCuts[i]);
+					cuts.Add(allCuts[i]);
 				}
 			}
 			return cuts;
@@ -81,11 +80,12 @@ namespace Pathfinding {
 		 *
 		 * \note Faster than Unity's built in version. See http://forum.unity3d.com/threads/204243-Slow-Unity-Math-Please-Unity-Tech-keep-core-math-fast?p=1404070#post1404070
 		 */
-		private static bool Intersects (Bounds b1, Bounds b2)        {
+		private static bool Intersects (Bounds b1, Bounds b2) {
 			Vector3 min1 = b1.min;
 			Vector3 max1 = b1.max;
 			Vector3 min2 = b2.min;
 			Vector3 max2 = b2.max;
+
 			return min1.x <= max2.x && max1.x >= min2.x && min1.y <= max2.y && max1.y >= min2.y && min1.z <= max2.z && max1.z >= min2.z;
 		}
 
@@ -96,26 +96,34 @@ namespace Pathfinding {
 			return allCuts;
 		}
 
+		/** Shape of the cut */
+		[Tooltip("Shape of the cut")]
 		public MeshType type;
 
 		/** Custom mesh to use.
 		 * The contour(s) of the mesh will be extracted.
 		 * If you get the "max perturbations" error when cutting with this, check the normals on the mesh.
 		 * They should all point in the same direction. Try flipping them if that does not help.
+		 *
+		 * This mesh should only be a 2D surface, not a volume.
 		 */
+		[Tooltip("The contour(s) of the mesh will be extracted. This mesh should only be a 2D surface, not a volume (see documentation).")]
 		public Mesh mesh;
 
 		/** Size of the rectangle */
-		public Vector2 rectangleSize = new Vector2(1,1);
+		public Vector2 rectangleSize = new Vector2(1, 1);
 
 		/** Radius of the circle */
 		public float circleRadius = 1;
 
 		/** Number of vertices on the circle */
 		public int circleResolution = 6;
+
+		/** The cut will be extruded to this height */
 		public float height = 1;
 
 		/** Scale of the custom mesh, if used */
+		[Tooltip("Scale of the custom mesh")]
 		public float meshScale = 1;
 
 		public Vector3 center;
@@ -126,16 +134,18 @@ namespace Pathfinding {
 		 *
 		 * \note Dynamic updating requires a TileHandlerHelper somewhere in the scene.
 		 */
+		[Tooltip("Distance between positions to require an update of the navmesh\nA smaller distance gives better accuracy, but requires more updates when moving the object over time, so it is often slower.")]
 		public float updateDistance = 0.4f;
 
 		/** Only makes a split in the navmesh, but does not remove the geometry to make a hole.
 		 * This is slower than a normal cut
 		 */
+		[Tooltip("Only makes a split in the navmesh, but does not remove the geometry to make a hole")]
 		public bool isDual;
 
 		/** Cuts geometry added by a NavmeshAdd component.
-		  * You rarely need to change this
-		  */
+		 * You rarely need to change this
+		 */
 		public bool cutsAddedGeom = true;
 
 		/** How many degrees rotation that is required for an update to the navmesh.
@@ -143,11 +153,13 @@ namespace Pathfinding {
 		 *
 		 * \note Dynamic updating requires a Tile Handler Helper somewhere in the scene.
 		 */
+		[Tooltip("How many degrees rotation that is required for an update to the navmesh. Should be between 0 and 180.")]
 		public float updateRotationDistance = 10;
 
 		/** Includes rotation in calculations.
 		 * This is slower since a lot more matrix multiplications are needed but gives more flexibility.
 		 */
+		[Tooltip("Includes rotation in calculations. This is slower since a lot more matrix multiplications are needed but gives more flexibility.")]
 		public bool useRotation;
 
 		Vector3[][] contours;
@@ -167,24 +179,24 @@ namespace Pathfinding {
 		}
 
 		public void Awake () {
+			tr = transform;
 			AddCut(this);
 		}
 
 		public void OnEnable () {
-			tr = transform;
-			lastPosition = new Vector3(float.PositiveInfinity,float.PositiveInfinity,float.PositiveInfinity);
+			lastPosition = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
 			lastRotation = tr.rotation;
 		}
 
 		public void OnDestroy () {
-			if (OnDestroyCallback != null) OnDestroyCallback (this);
+			if (OnDestroyCallback != null) OnDestroyCallback(this);
 			RemoveCut(this);
 		}
 
 		/** Cached variable, to avoid allocations */
-		static readonly Dictionary<Int2,int> edges = new Dictionary<Int2, int>();
+		static readonly Dictionary<Int2, int> edges = new Dictionary<Int2, int>();
 		/** Cached variable, to avoid allocations */
-		static readonly Dictionary<int,int> pointers = new Dictionary<int, int>();
+		static readonly Dictionary<int, int> pointers = new Dictionary<int, int>();
 
 		/** Forces this navmesh cut to update the navmesh.
 		 *
@@ -195,7 +207,7 @@ namespace Pathfinding {
 		 * \see TileHandlerHelper.ForceUpdate()
 		 */
 		public void ForceUpdate () {
-			lastPosition = new Vector3(float.PositiveInfinity,float.PositiveInfinity,float.PositiveInfinity);
+			lastPosition = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
 		}
 
 		/** Returns true if this object has moved so much that it requires an update.
@@ -203,7 +215,7 @@ namespace Pathfinding {
 		 * relavant output from this method again.
 		 */
 		public bool RequiresUpdate () {
-			return wasEnabled != enabled || (wasEnabled && ((tr.position-lastPosition).sqrMagnitude > updateDistance*updateDistance || (useRotation && (Quaternion.Angle (lastRotation, tr.rotation) > updateRotationDistance))));
+			return wasEnabled != enabled || (wasEnabled && ((tr.position-lastPosition).sqrMagnitude > updateDistance*updateDistance || (useRotation && (Quaternion.Angle(lastRotation, tr.rotation) > updateRotationDistance))));
 		}
 
 		/**
@@ -236,23 +248,22 @@ namespace Pathfinding {
 
 			Vector3[] verts = mesh.vertices;
 			int[] tris = mesh.triangles;
-			for (int i=0;i<tris.Length;i+=3) {
-
+			for (int i = 0; i < tris.Length; i += 3) {
 				// Make sure it is clockwise
-				if ( Polygon.IsClockwise ( verts[tris[i+0]], verts[tris[i+1]], verts[tris[i+2]] ) ) {
+				if (VectorMath.IsClockwiseXZ(verts[tris[i+0]], verts[tris[i+1]], verts[tris[i+2]])) {
 					int tmp = tris[i+0];
 					tris[i+0] = tris[i+2];
 					tris[i+2] = tmp;
 				}
 
-				edges[new Int2(tris[i+0],tris[i+1])] = i;
-				edges[new Int2(tris[i+1],tris[i+2])] = i;
-				edges[new Int2(tris[i+2],tris[i+0])] = i;
+				edges[new Int2(tris[i+0], tris[i+1])] = i;
+				edges[new Int2(tris[i+1], tris[i+2])] = i;
+				edges[new Int2(tris[i+2], tris[i+0])] = i;
 			}
 
 			// Construct a list of pointers along all edges
-			for (int i=0;i<tris.Length;i+=3) {
-				for (int j=0;j<3;j++) {
+			for (int i = 0; i < tris.Length; i += 3) {
+				for (int j = 0; j < 3; j++) {
 					if (!edges.ContainsKey(new Int2(tris[i+((j+1)%3)], tris[i+((j+0)%3)]))) {
 						pointers[tris[i+((j+0)%3)]] = tris[i+((j+1)%3)];
 					}
@@ -264,7 +275,7 @@ namespace Pathfinding {
 			List<Vector3> buffer = Pathfinding.Util.ListPool<Vector3>.Claim();
 
 			// Follow edge pointers to generate the contours
-			for (int i=0;i<verts.Length;i++) {
+			for (int i = 0; i < verts.Length; i++) {
 				if (pointers.ContainsKey(i)) {
 					buffer.Clear();
 
@@ -276,16 +287,16 @@ namespace Pathfinding {
 						if (tmp == -1) break;
 
 						pointers[s] = -1;
-						buffer.Add (verts[s]);
+						buffer.Add(verts[s]);
 						s = tmp;
 
 						if (s == -1) {
-							Debug.LogError ("Invalid Mesh '"  + mesh.name + " in " + gameObject.name);
+							Debug.LogError("Invalid Mesh '"  + mesh.name + " in " + gameObject.name);
 							break;
 						}
 					} while (s != i);
 
-					if (buffer.Count > 0) contourBuffer.Add (buffer.ToArray());
+					if (buffer.Count > 0) contourBuffer.Add(buffer.ToArray());
 				}
 			}
 
@@ -297,68 +308,71 @@ namespace Pathfinding {
 
 		/** World space bounds of this cut */
 		public Bounds GetBounds () {
-			var bounds = new Bounds();
+			Bounds bounds;
+
 			switch (type) {
 			case MeshType.Rectangle:
 				if (useRotation) {
 					Matrix4x4 m = tr.localToWorldMatrix;
 					// Calculate the bounds by encapsulating each of the 8 corners in a bounds object
-					bounds = new Bounds(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x,-height,-rectangleSize.y)*0.5f), Vector3.zero);
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x,-height,-rectangleSize.y)*0.5f));
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x,-height,rectangleSize.y)*0.5f));
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x,-height,rectangleSize.y)*0.5f));
+					bounds = new Bounds(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x, -height, -rectangleSize.y)*0.5f), Vector3.zero);
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x, -height, -rectangleSize.y)*0.5f));
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x, -height, rectangleSize.y)*0.5f));
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x, -height, rectangleSize.y)*0.5f));
 
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x,height,-rectangleSize.y)*0.5f));
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x,height,-rectangleSize.y)*0.5f));
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x,height,rectangleSize.y)*0.5f));
-					bounds.Encapsulate (m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x,height,rectangleSize.y)*0.5f));
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x, height, -rectangleSize.y)*0.5f));
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x, height, -rectangleSize.y)*0.5f));
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x, height, rectangleSize.y)*0.5f));
+					bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x, height, rectangleSize.y)*0.5f));
 				} else {
-					bounds = new Bounds(tr.position+center, new Vector3(rectangleSize.x,height,rectangleSize.y));
+					bounds = new Bounds(tr.position+center, new Vector3(rectangleSize.x, height, rectangleSize.y));
 				}
 				break;
 			case MeshType.Circle:
 				if (useRotation) {
 					Matrix4x4 m = tr.localToWorldMatrix;
-					bounds = new Bounds(m.MultiplyPoint3x4 (center), new Vector3(circleRadius*2,height,circleRadius*2));
+					bounds = new Bounds(m.MultiplyPoint3x4(center), new Vector3(circleRadius*2, height, circleRadius*2));
 				} else {
-					bounds = new Bounds(transform.position+center, new Vector3(circleRadius*2,height,circleRadius*2));
+					bounds = new Bounds(transform.position+center, new Vector3(circleRadius*2, height, circleRadius*2));
 				}
 				break;
 			case MeshType.CustomMesh:
-				if (mesh == null) break;
-
-				Bounds b = mesh.bounds;
-				if (useRotation) {
-					Matrix4x4 m = tr.localToWorldMatrix;
-					b.center *= meshScale;
-					b.size *= meshScale;
-
-					bounds = new Bounds ( m.MultiplyPoint3x4 ( center + b.center ), Vector3.zero );
-
-					Vector3 mx = b.max;
-					Vector3 mn = b.min;
-
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mx.x,mx.y,mx.z )) );
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mn.x,mx.y,mx.z )) );
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mn.x,mx.y,mn.z )) );
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mx.x,mx.y,mn.z )) );
-
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mx.x,mn.y,mx.z )) );
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mn.x,mn.y,mx.z )) );
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mn.x,mn.y,mn.z )) );
-					bounds.Encapsulate (m.MultiplyPoint3x4 ( center + new Vector3 (mx.x,mn.y,mn.z )) );
-
-					Vector3 size = bounds.size;
-					size.y = Mathf.Max(size.y, height * tr.lossyScale.y);
-					bounds.size = size;
+				if (mesh == null) {
+					bounds = new Bounds();
 				} else {
-					Vector3 size = b.size*meshScale;
-					size.y = Mathf.Max(size.y, height);
-					bounds = new Bounds(transform.position+center+b.center*meshScale,size);
+					Bounds meshBounds = mesh.bounds;
+					if (useRotation) {
+						Matrix4x4 m = tr.localToWorldMatrix;
+						meshBounds.center *= meshScale;
+						meshBounds.size *= meshScale;
+
+						bounds = new Bounds(m.MultiplyPoint3x4(center + meshBounds.center), Vector3.zero);
+
+						Vector3 mx = meshBounds.max;
+						Vector3 mn = meshBounds.min;
+
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mx.x, mx.y, mx.z)));
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mn.x, mx.y, mx.z)));
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mn.x, mx.y, mn.z)));
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mx.x, mx.y, mn.z)));
+
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mx.x, mn.y, mx.z)));
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mn.x, mn.y, mx.z)));
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mn.x, mn.y, mn.z)));
+						bounds.Encapsulate(m.MultiplyPoint3x4(center + new Vector3(mx.x, mn.y, mn.z)));
+
+						Vector3 size = bounds.size;
+						size.y = Mathf.Max(size.y, height * tr.lossyScale.y);
+						bounds.size = size;
+					} else {
+						Vector3 size = meshBounds.size*meshScale;
+						size.y = Mathf.Max(size.y, height);
+						bounds = new Bounds(transform.position+center+meshBounds.center*meshScale, size);
+					}
 				}
 				break;
 			default:
-				throw new System.Exception ("Invalid mesh type");
+				throw new System.Exception("Invalid mesh type");
 			}
 			return bounds;
 		}
@@ -368,42 +382,60 @@ namespace Pathfinding {
 		 * Fills the specified buffer with all contours.
 		 * The cut may contain several contours which is why the buffer is a list of lists.
 		 */
-		public void GetContour (List<List<Pathfinding.ClipperLib.IntPoint>> buffer) {
-
+		public void GetContour (List<List<Pathfinding.ClipperLib.IntPoint> > buffer) {
 			if (circleResolution < 3) circleResolution = 3;
 
 			Vector3 woffset = tr.position;
+
+			Matrix4x4 local2world = Matrix4x4.identity;
+
+			bool reverse = false;
+
+			// Take rotation and scaling into account
+			if (useRotation) {
+				local2world = tr.localToWorldMatrix;
+				reverse = VectorMath.ReversesFaceOrientationsXZ(local2world);
+			}
+
 			switch (type) {
 			case MeshType.Rectangle:
 				List<Pathfinding.ClipperLib.IntPoint> buffer0 = Pathfinding.Util.ListPool<Pathfinding.ClipperLib.IntPoint>.Claim();
+
+				reverse ^= (rectangleSize.x < 0) ^ (rectangleSize.y < 0);
+
 				if (useRotation) {
-					Matrix4x4 m = tr.localToWorldMatrix;
-					buffer0.Add (V3ToIntPoint(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x,0,-rectangleSize.y)*0.5f)));
-					buffer0.Add (V3ToIntPoint(m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x,0,-rectangleSize.y)*0.5f)));
-					buffer0.Add (V3ToIntPoint(m.MultiplyPoint3x4(center + new Vector3(rectangleSize.x,0,rectangleSize.y)*0.5f)));
-					buffer0.Add (V3ToIntPoint(m.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x,0,rectangleSize.y)*0.5f)));
+					buffer0.Add(V3ToIntPoint(local2world.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x, 0, -rectangleSize.y)*0.5f)));
+					buffer0.Add(V3ToIntPoint(local2world.MultiplyPoint3x4(center + new Vector3(rectangleSize.x, 0, -rectangleSize.y)*0.5f)));
+					buffer0.Add(V3ToIntPoint(local2world.MultiplyPoint3x4(center + new Vector3(rectangleSize.x, 0, rectangleSize.y)*0.5f)));
+					buffer0.Add(V3ToIntPoint(local2world.MultiplyPoint3x4(center + new Vector3(-rectangleSize.x, 0, rectangleSize.y)*0.5f)));
 				} else {
 					woffset += center;
-					buffer0.Add (V3ToIntPoint(woffset + new Vector3(-rectangleSize.x,0,-rectangleSize.y)*0.5f));
-					buffer0.Add (V3ToIntPoint(woffset + new Vector3(rectangleSize.x,0,-rectangleSize.y)*0.5f));
-					buffer0.Add (V3ToIntPoint(woffset + new Vector3(rectangleSize.x,0,rectangleSize.y)*0.5f));
-					buffer0.Add (V3ToIntPoint(woffset + new Vector3(-rectangleSize.x,0,rectangleSize.y)*0.5f));
+					buffer0.Add(V3ToIntPoint(woffset + new Vector3(-rectangleSize.x, 0, -rectangleSize.y)*0.5f));
+					buffer0.Add(V3ToIntPoint(woffset + new Vector3(rectangleSize.x, 0, -rectangleSize.y)*0.5f));
+					buffer0.Add(V3ToIntPoint(woffset + new Vector3(rectangleSize.x, 0, rectangleSize.y)*0.5f));
+					buffer0.Add(V3ToIntPoint(woffset + new Vector3(-rectangleSize.x, 0, rectangleSize.y)*0.5f));
 				}
+
+				if (reverse) buffer0.Reverse();
 				buffer.Add(buffer0);
 				break;
 			case MeshType.Circle:
 				buffer0 = Pathfinding.Util.ListPool<Pathfinding.ClipperLib.IntPoint>.Claim(circleResolution);
+
+				reverse ^= circleRadius < 0;
+
 				if (useRotation) {
-					Matrix4x4 m = tr.localToWorldMatrix;
-					for (int i=0;i<circleResolution;i++) {
-						buffer0.Add (V3ToIntPoint(m.MultiplyPoint3x4(center + new Vector3(Mathf.Cos((i*2*Mathf.PI)/circleResolution),0,Mathf.Sin((i*2*Mathf.PI)/circleResolution))*circleRadius)));
+					for (int i = 0; i < circleResolution; i++) {
+						buffer0.Add(V3ToIntPoint(local2world.MultiplyPoint3x4(center + new Vector3(Mathf.Cos((i*2*Mathf.PI)/circleResolution), 0, Mathf.Sin((i*2*Mathf.PI)/circleResolution))*circleRadius)));
 					}
 				} else {
 					woffset += center;
-					for (int i=0;i<circleResolution;i++) {
-						buffer0.Add (V3ToIntPoint(woffset + new Vector3(Mathf.Cos((i*2*Mathf.PI)/circleResolution),0,Mathf.Sin((i*2*Mathf.PI)/circleResolution))*circleRadius));
+					for (int i = 0; i < circleResolution; i++) {
+						buffer0.Add(V3ToIntPoint(woffset + new Vector3(Mathf.Cos((i*2*Mathf.PI)/circleResolution), 0, Mathf.Sin((i*2*Mathf.PI)/circleResolution))*circleRadius));
 					}
 				}
+
+				if (reverse) buffer0.Reverse();
 				buffer.Add(buffer0);
 				break;
 			case MeshType.CustomMesh:
@@ -415,26 +447,24 @@ namespace Pathfinding {
 				if (contours != null) {
 					woffset += center;
 
-					bool reverse = Vector3.Dot ( tr.up, Vector3.up ) < 0;
+					reverse ^= meshScale < 0;
 
-					for (int i=0;i<contours.Length;i++) {
+					for (int i = 0; i < contours.Length; i++) {
 						Vector3[] contour = contours[i];
 
 						buffer0 = Pathfinding.Util.ListPool<Pathfinding.ClipperLib.IntPoint>.Claim(contour.Length);
 						if (useRotation) {
-							Matrix4x4 m = tr.localToWorldMatrix;
-							for (int x=0;x<contour.Length;x++) {
-								buffer0.Add(V3ToIntPoint(m.MultiplyPoint3x4(center + contour[x]*meshScale)));
+							for (int x = 0; x < contour.Length; x++) {
+								buffer0.Add(V3ToIntPoint(local2world.MultiplyPoint3x4(center + contour[x]*meshScale)));
 							}
 						} else {
-							for (int x=0;x<contour.Length;x++) {
+							for (int x = 0; x < contour.Length; x++) {
 								buffer0.Add(V3ToIntPoint(woffset + contour[x]*meshScale));
 							}
 						}
 
-						if ( reverse ) buffer0.Reverse ();
-
-						buffer.Add (buffer0);
+						if (reverse) buffer0.Reverse();
+						buffer.Add(buffer0);
 					}
 				}
 				break;
@@ -446,24 +476,25 @@ namespace Pathfinding {
 		 */
 		public static Pathfinding.ClipperLib.IntPoint V3ToIntPoint (Vector3 p) {
 			var ip = (Int3)p;
-			return new Pathfinding.ClipperLib.IntPoint(ip.x,ip.z);
+
+			return new Pathfinding.ClipperLib.IntPoint(ip.x, ip.z);
 		}
 
 		/** Converts an IntPoint to a Vector3.
 		 * This is a lossy conversion.
 		 */
 		public static Vector3 IntPointToV3 (Pathfinding.ClipperLib.IntPoint p) {
-			var ip = new Int3((int)p.X,0,(int)p.Y);
+			var ip = new Int3((int)p.X, 0, (int)p.Y);
+
 			return (Vector3)ip;
 		}
 
-		public static readonly Color GizmoColor = new Color(37.0f/255,184.0f/255,239.0f/255);
+		public static readonly Color GizmoColor = new Color(37.0f/255, 184.0f/255, 239.0f/255);
 
 		public void OnDrawGizmos () {
-
 			if (tr == null) tr = transform;
 
-			var buffer = Pathfinding.Util.ListPool<List<Pathfinding.ClipperLib.IntPoint>>.Claim();
+			var buffer = Pathfinding.Util.ListPool<List<Pathfinding.ClipperLib.IntPoint> >.Claim();
 			GetContour(buffer);
 			Gizmos.color = GizmoColor;
 			var bounds = GetBounds();
@@ -471,30 +502,29 @@ namespace Pathfinding {
 			var yoffset = Vector3.up * (bounds.max.y - ymin);
 
 			// Draw all contours
-			for (int i=0;i<buffer.Count;i++) {
+			for (int i = 0; i < buffer.Count; i++) {
 				List<Pathfinding.ClipperLib.IntPoint> cont = buffer[i];
-				for (int j=0;j<cont.Count;j++) {
+				for (int j = 0; j < cont.Count; j++) {
 					Vector3 p1 = IntPointToV3(cont[j]);
 					p1.y = ymin;
 					Vector3 p2 = IntPointToV3(cont[(j+1) % cont.Count]);
 					p2.y = ymin;
-					Gizmos.DrawLine (p1,p2);
-					Gizmos.DrawLine (p1+yoffset, p2+yoffset);
-					Gizmos.DrawLine (p1, p1+yoffset);
-					Gizmos.DrawLine (p2, p2+yoffset);
+					Gizmos.DrawLine(p1, p2);
+					Gizmos.DrawLine(p1+yoffset, p2+yoffset);
+					Gizmos.DrawLine(p1, p1+yoffset);
+					Gizmos.DrawLine(p2, p2+yoffset);
 				}
 			}
 
-			Pathfinding.Util.ListPool<List<Pathfinding.ClipperLib.IntPoint>>.Release(buffer);
+			Pathfinding.Util.ListPool<List<Pathfinding.ClipperLib.IntPoint> >.Release(buffer);
 		}
 
 		public void OnDrawGizmosSelected () {
-			Gizmos.color = Color.Lerp (GizmoColor, new Color (1,1,1,0.2f), 0.9f);
+			Gizmos.color = Color.Lerp(GizmoColor, new Color(1, 1, 1, 0.2f), 0.9f);
 
-			Bounds b = GetBounds ();
-			Gizmos.DrawCube (b.center, b.size);
-			Gizmos.DrawWireCube (b.center, b.size);
+			Bounds b = GetBounds();
+			Gizmos.DrawCube(b.center, b.size);
+			Gizmos.DrawWireCube(b.center, b.size);
 		}
-
 	}
 }
