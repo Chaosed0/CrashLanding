@@ -79,9 +79,9 @@ public class PlayerFollower : MonoBehaviour {
         }
 
         if (motor != null) {
-            motor.Move(dir.normalized, yaw, false, false);
+            motor.Move(flatDir.normalized, yaw, false, false);
         } else if (rigidMotor != null) {
-            rigidMotor.Move(dir.normalized, yaw);
+            rigidMotor.Move(flatDir.normalized, yaw);
         }
 	}
 

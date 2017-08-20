@@ -5,6 +5,7 @@ using System.Collections;
 public class CollideDamager : MonoBehaviour {
     public int damageOnCollide = 2;
     public bool dieOnCollide = false;
+    public float forceOnCollide = 0;
 
     void OnCollisionEnter(Collision collision) {
         if (!this.enabled) {
@@ -17,6 +18,12 @@ public class CollideDamager : MonoBehaviour {
 
             if (dieOnCollide) {
                 this.GetComponent<Character>().setHealth(0);
+            }
+
+            if (forceOnCollide > 0) {
+                Vector3 forceVector = (player.transform.position - transform.position).normalized;
+                forceVector *= forceOnCollide;
+                player.GetComponent<Rigidbody>().AddForce(forceVector);
             }
         }
     }

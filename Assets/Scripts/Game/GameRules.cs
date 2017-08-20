@@ -32,7 +32,7 @@ public class GameRules : MonoBehaviour {
 
 	void Start () {
         for (int i = 0; i < horseSpawners.Length; i++) {
-            horseSpawners[i].gameObject.SetActive(false);
+            horseSpawners[i].gameObject.SetActive(true);
         }
         for (int i = 0; i < skeletonSpawners.Length; i++) {
             skeletonSpawners[i].gameObject.SetActive(false);
