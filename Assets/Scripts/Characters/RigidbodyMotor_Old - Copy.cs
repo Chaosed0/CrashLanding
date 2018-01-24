@@ -2,21 +2,21 @@
 using System.Collections;
 
 [RequireComponent(typeof (Character))]
-public class RigidbodyMotor : MonoBehaviour {
+public class RigidbodyMotor_Old : MonoBehaviour {
     private Rigidbody body;
     private Character character;
     
     public Animator anim;
     public bool canDoubleJump = true;
-    public bool isFlying = false;
 
-    public float maxMoveSpeed = 10.0f;
-    public float moveForce = 1000.0f;
+    public float moveSpeed = 10.0f;
+    public float moveAcceleration = 100.0f;
+    public float moveFriction = 50.0f;
     public float turnSpeed = 100.0f;
-    public float jumpForce = 1000.0f;
-    public float dodgeForce = 10000.0f;
+    public float jumpSpeed = 5.0f;
+    public float dodgeSpeed = 100.0f;
+    public float friction = 1000.0f;
     public float distToGround = 2.0f;
-    public float dodgeFriction = 15.0f;
 
     private bool isDodging;
     private Vector3 dodgeDir = new Vector3(0,0,0);
@@ -100,6 +100,8 @@ public class RigidbodyMotor : MonoBehaviour {
             this.moving = moving;
         }
 
+        Vector3 velocityChange = new Vector3(0,0,0);
+
         RaycastHit hitInfo;
         bool isGrounded = Physics.Raycast(transform.position + new Vector3(0.0f, distToGround, 0.0f), -Vector3.up, out hitInfo, distToGround + 0.25f);
 
@@ -119,30 +121,30 @@ public class RigidbodyMotor : MonoBehaviour {
             haveDoubleJump = true;
         }
 
-        Vector3 planarVelocity = new Vector3(body.velocity.x, 0.0f, body.velocity.z);
         if (!isDodging) {
-            Vector3 consideredVelocity;
-            Vector3 desiredVelocity;
-            if (!isFlying)
+            Vector3 planarVelocity = new Vector3(body.velocity.x, 0.0f, body.velocity.z);
+
+            if (movement.sqrMagnitude >= 0.01f)
             {
-                consideredVelocity = planarVelocity;
-                desiredVelocity = Vector3.Scale(movement, new Vector3(1, 0, 1)).normalized * maxMoveSpeed;
-            }
-            else
-            {
-                consideredVelocity = body.velocity;
-                desiredVelocity = movement.normalized * maxMoveSpeed;
+                Vector3 accel = movement * moveAcceleration * Time.deltaTime;
+                Vector3 projectedPlanarVelocity = Vector3.Project(planarVelocity, accel);
+                Vector3 proposedVelocity = projectedPlanarVelocity + accel;
+                proposedVelocity = Vector3.ClampMagnitude(proposedVelocity, moveSpeed);
+
+                Vector3 proposedAccel = (proposedVelocity - projectedPlanarVelocity);
+                // Make sure the proposed acceleration still points in the same way as the original acceleration
+                if (Vector3.Dot(accel.normalized, proposedAccel.normalized) > 0.0f) {
+                    velocityChange += proposedAccel;
+                }
             }
 
-            Vector3 relativeForce = (desiredVelocity - consideredVelocity) / maxMoveSpeed * moveForce;
-            body.AddForce(relativeForce);
+            // Apply friction
+            velocityChange -= Vector3.ClampMagnitude(planarVelocity, moveFriction * Time.deltaTime);
         }
 
         if ((isGrounded || haveDoubleJump) && !isDodging) {
             if (jump) {
-                jump = false;
-                body.AddForce(jumpForce * Vector3.up, ForceMode.Impulse);
-
+                velocityChange.y = jumpSpeed;
                 if (!isGrounded && haveDoubleJump) {
                     haveDoubleJump = false;
                 }
@@ -155,10 +157,10 @@ public class RigidbodyMotor : MonoBehaviour {
         }
 
         if (isDodging) {
-            body.AddForce(-dodgeFriction * new Vector3(Mathf.Sign(planarVelocity.x) * planarVelocity.x * planarVelocity.x, 0.0f, Mathf.Sign(planarVelocity.z) * planarVelocity.z * planarVelocity.z));
-
-            if (body.velocity.magnitude <= maxMoveSpeed * 0.75f) {
+            velocityChange = Vector3.ClampMagnitude(body.velocity, body.velocity.magnitude - friction * Time.deltaTime) - body.velocity;
+            if (body.velocity.magnitude <= 3.0f) {
                 isDodging = false;
+                body.useGravity = true;
                 dodgeDir = Vector3.zero;
                 if (OnStopDodge != null) {
                     OnStopDodge(!isGrounded);
@@ -173,15 +175,17 @@ public class RigidbodyMotor : MonoBehaviour {
         if (dodge && (isGrounded || haveDoubleJump) && !isDodging) {
             dodgeDir = Vector3.Scale(movement, new Vector3(1,0,1));
             if (dodgeDir.magnitude > 0.01f) {
-                body.AddForce(dodgeDir * dodgeForce, ForceMode.Impulse);
-
                 isDodging = true;
+                body.useGravity = false;
+                velocityChange = dodgeDir * dodgeSpeed;
                 OnDodge(!isGrounded);
                 if (!isGrounded && haveDoubleJump) {
                     haveDoubleJump = false;
                 }
             }
         }
+
+        body.AddForce(velocityChange, ForceMode.VelocityChange);
 
         transform.Rotate(0, yaw * turnSpeed * Time.deltaTime, 0);
 

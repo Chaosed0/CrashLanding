@@ -13,8 +13,7 @@ public class Flyer : MonoBehaviour {
 
 	void Update () {
         Transform player = Util.getPlayer().transform;
-        float height = player.position.y + flightHeight;
-        Vector3 target = Vector3.Scale(player.position, new Vector3(1,0,1)) + new Vector3(0,height,0);
+        Vector3 target = player.position + new Vector3(0,flightHeight,0);
         Vector3 dir = target - transform.position;
         Vector3 flatDir = Vector3.Scale(dir, new Vector3(1,0,1));
 
@@ -24,9 +23,13 @@ public class Flyer : MonoBehaviour {
             yaw = Mathf.Sign(angle);
         }
 
-        if (dir.magnitude <= followDistance) {
-            dir = new Vector3(0,dir.y,0);
+        if (flatDir.magnitude <= followDistance) {
+            flatDir = Vector3.zero;
+        } else {
+            flatDir = flatDir.normalized;
         }
-        rigidMotor.Move(dir.normalized, yaw);
+
+        Vector3 movement = flatDir + new Vector3(0,dir.y,0);
+        rigidMotor.Move(movement, yaw);
 	}
 }

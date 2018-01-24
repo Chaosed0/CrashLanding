@@ -39,18 +39,22 @@ public class Tutorial : MonoBehaviour {
     public delegate void EarlyTutorialEnd();
     public event EarlyTutorialEnd OnEarlyTutorialEnd;
 
+    public bool skipTutorial;
+
     void Start() {
         GameObject sharedLevelObject = GameObject.Find("SharedLevelObject");
+        bool skipTutorial = false;
         if (sharedLevelObject != null) {
-            bool skipTutorial = sharedLevelObject.GetComponent<SharedLevelObject>().skipTutorial;
-            if (skipTutorial) {
-                if (OnEarlyTutorialEnd != null) {
-                    OnEarlyTutorialEnd();
-                }
-                healthText.gameObject.SetActive(true);
-                shipPowerText.gameObject.SetActive(true);
-                state = TutorialState.SHIP_POWER;
+            skipTutorial = sharedLevelObject.GetComponent<SharedLevelObject>().skipTutorial;
+        }
+
+        if (skipTutorial || this.skipTutorial) {
+            if (OnEarlyTutorialEnd != null) {
+                OnEarlyTutorialEnd();
             }
+            healthText.gameObject.SetActive(true);
+            shipPowerText.gameObject.SetActive(true);
+            state = TutorialState.SHIP_POWER;
         }
     }
 
